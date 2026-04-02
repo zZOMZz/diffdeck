@@ -1,0 +1,25 @@
+{
+  "name": "@reviewdeck/cli",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "bin": {
+    "reviewdeck": "dist/index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@reviewdeck/shared": "workspace:*",
+    "@reviewdeck/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@reviewdeck/cli-ui": "workspace:*",
+    "@reviewdeck/eslint-config": "workspace:*",
+    "@reviewdeck/typescript-config": "workspace:*"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
