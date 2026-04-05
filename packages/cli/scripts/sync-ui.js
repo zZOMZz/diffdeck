@@ -1,7 +1,7 @@
-const fs = require("node:fs");
-const path = require("node:path");
+import fs from "node:fs";
+import path from "node:path";
 
-const rootDir = path.resolve(__dirname, '..', '..', '..');
+const rootDir = path.resolve(import.meta.dirname, '..', '..', '..');
 const uiDir = path.resolve(rootDir, 'packages', 'cli-ui', 'dist');
 const targetDir = path.resolve(rootDir, 'packages', 'cli', 'static', 'web-ui')
 
