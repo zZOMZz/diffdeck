@@ -3,9 +3,8 @@
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./dist",
-    "allowImportingTsExtensions": true,
     "emitDeclarationOnly": true,
-    "declaration": true,
+    "declarationMap": false
   },
   "include": ["src"]
 }
