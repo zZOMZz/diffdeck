@@ -1,3 +1,4 @@
+
 /**
  * Render command: starts a local web server for diff review.
  *
@@ -8,13 +9,42 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { resolve, extname } from "node:path";
 import { readFile, readdir, stat } from "node:fs/promises";
-import type { AgentDraftComment, ReviewSubmission } from "@reviewdeck/shared";
+import { readStdin, type AgentDraftComment, type ReviewSubmission, type SubPatch } from "@reviewdeck/shared";
+import { CAC } from "cac";
 
-interface SubPatch {
-  index: number;
-  description: string;
-  diff: string;
-  draftComments: AgentDraftComment[];
+interface RenderOptions {
+  port?: string;
+}
+
+const SUB_PATCH_SEPARATOR = "===SUB_PATCH===";
+
+export function registerRenderCommands(cli: CAC) {
+  cli.command("render <source> [-o <file>]")
+    .option("-p, --port <port>", "port")
+    .action(RenderAction);
+}
+
+const RenderAction = async (source: string, options: RenderOptions) => {
+  let subPatches: SubPatch[] = [];
+  if (source === "-") {
+    const input = await readStdin();
+    subPatches = parseSubPatchesFromStdin(input, SUB_PATCH_SEPARATOR);
+  } else {
+    subPatches = await parseSubPatchesFromDir(source);
+  }
+
+  if (subPatches.length === 0) {
+    console.error("ERRPR: No sub-patches to review");
+    process.exit(1);
+  }
+
+  console.error(`Loaded ${subPatches.length} sub-patches for review`)
+  const port = options.port ? parseInt(options.port, 10) : undefined
+  const submission = await startReviewServer(subPatches, { port })
+
+  // Output submission as JSON to stdout
+  process.stdout.write(JSON.stringify(submission, null, 2));
+  process.stdout.write("\n");
 }
 
 async function findDir(candidates: string[]): Promise<string | null> {

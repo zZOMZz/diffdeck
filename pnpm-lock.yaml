@@ -143,6 +143,9 @@ importers:
       '@reviewdeck/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
+      '@types/node':
+        specifier: ^24.12.0
+        version: 24.12.0
       esbuild:
         specifier: ^0.28.0
         version: 0.28.0

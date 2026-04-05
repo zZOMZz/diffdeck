@@ -119,3 +119,10 @@ export interface ResolvedSplitGroupMeta {
   description: string;
   draftComments: AgentDraftComment[];
 }
+
+export interface SubPatch {
+  index: number;
+  description: string;
+  diff: string;
+  draftComments: AgentDraftComment[];
+}
