@@ -113,3 +113,9 @@ export interface DiffLine {
   type: " " | "-" | "+";
   content: string;
 }
+
+export interface ResolvedSplitGroupMeta {
+  index: number;
+  description: string;
+  draftComments: AgentDraftComment[];
+}

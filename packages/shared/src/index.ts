@@ -1,2 +1,1 @@
-export { add } from "./utils/add.js";
-export type { DiffLine } from "./types.js";
+export * from "./types.js";

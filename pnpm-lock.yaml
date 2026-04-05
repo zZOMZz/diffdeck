@@ -39,6 +39,9 @@ importers:
       '@reviewdeck/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
+      '@types/node':
+        specifier: ^24.12.0
+        version: 24.12.0
       esbuild:
         specifier: ^0.28.0
         version: 0.28.0
@@ -136,10 +139,6 @@ importers:
         version: 8.50.0(eslint@9.39.1)(typescript@5.9.2)
 
   packages/shared:
-    dependencies:
-      typescript:
-        specifier: ~5.9.3
-        version: 5.9.3
     devDependencies:
       '@reviewdeck/typescript-config':
         specifier: workspace:*
@@ -147,6 +146,9 @@ importers:
       esbuild:
         specifier: ^0.28.0
         version: 0.28.0
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
 
   packages/typescript-config: {}
 

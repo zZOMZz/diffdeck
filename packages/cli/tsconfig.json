@@ -1,0 +1,11 @@
+{
+  "extends": "@reviewdeck/typescript-config/bundler",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["src"]
+}
