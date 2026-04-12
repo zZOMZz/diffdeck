@@ -4,8 +4,8 @@ export type ParsedDiffFile = {
   key: string
   srcFile: string
   dstFile: string
-  isNew?: boolean
-  isDelete?: boolean
+  isNew: boolean
+  isDelete: boolean
   hunks: ParsedHunk[]
 }
 

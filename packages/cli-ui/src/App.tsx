@@ -463,6 +463,12 @@ function App() {
                               <Badge>{file.dstFile}</Badge>
                             </>
                           ) : null}
+
+                          {file.isDelete ? (
+                            <Badge variant="destructive">Deleted</Badge>
+                          ) : file.isNew ? (
+                            <Badge variant="success">Added</Badge>
+                          ) : null}
                         </div>
 
                         {file.hunks.map((hunk) => (
