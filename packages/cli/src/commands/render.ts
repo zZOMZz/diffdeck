@@ -111,7 +111,7 @@ export async function startReviewServer(
         return;
       }
 
-      // 完成修改后的提交请求67666666
+      // 完成修改后的提交请求
    if (url === "/api/submit" && req.method === "POST") {
         req.setEncoding("utf-8");
         let body = "";
@@ -121,7 +121,7 @@ export async function startReviewServer(
 
         const submission: ReviewSubmission = JSON.parse(body);
         res.writeHead(200, { "content-type": "application/json" });
-        res.end(JSON.stringify(submission));
+        res.end(JSON.stringify({ ok: true }));
 
         setTimeout(() => {
           server.close(() => resolveComments(submission));

@@ -1,121 +1,894 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useEffect, useState } from 'react'
+import {
+  Check,
+  ChevronRight,
+  LoaderCircle,
+  MessageSquarePlus,
+  Send,
+} from 'lucide-react'
+
+import type {
+  AgentDraftCommentDecision,
+  ReviewComment,
+  ReviewSide,
+  ReviewSubmission,
+  SubPatch,
+} from '@reviewdeck/shared'
+
+import { Badge } from './components/ui/badge'
+import { Button } from './components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from './components/ui/card'
+import { Textarea } from './components/ui/textarea'
+
+type ParsedDiffFile = {
+  key: string
+  srcFile: string
+  dstFile: string
+  hunks: ParsedHunk[]
+}
+
+type ParsedHunk = {
+  header: string
+  lines: ParsedDiffLine[]
+}
+
+type ParsedDiffLine = {
+  key: string
+  kind: 'context' | 'delete' | 'add' | 'meta'
+  content: string
+  oldLineNumber?: number
+  newLineNumber?: number
+  commentTarget?: {
+    file: string
+    line: number
+    side: ReviewSide
+  }
+}
+
+type LocalComment = ReviewComment & { id: string }
+
+type ComposerState = {
+  patchIndex: number
+  lineKey: string
+  file: string
+  line: number
+  side: ReviewSide
+}
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [patches, setPatches] = useState<SubPatch[]>([])
+  const [selectedPatchId, setSelectedPatchId] = useState<number | null>(null)
+  const [commentsByPatch, setCommentsByPatch] = useState<
+    Record<number, LocalComment[]>
+  >({})
+  const [draftDecisions, setDraftDecisions] = useState<
+    Record<string, AgentDraftCommentDecision>
+  >({})
+  const [composer, setComposer] = useState<ComposerState | null>(null)
+  const [composerText, setComposerText] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [submitted, setSubmitted] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadPatches = async () => {
+      setLoading(true)
+      setLoadError(null)
+
+      try {
+        const response = await fetch('/api/patches')
+        if (!response.ok) {
+          throw new Error(`Failed to load patches (${response.status})`)
+        }
+
+        const data = (await response.json()) as SubPatch[]
+        if (cancelled) {
+          return
+        }
+
+        setPatches(data)
+        setSelectedPatchId(data[0]?.index ?? null)
+
+        const nextDraftDecisions: Record<string, AgentDraftCommentDecision> = {}
+        for (const patch of data) {
+          for (const draftComment of patch.draftComments) {
+            nextDraftDecisions[draftComment.id] = {
+              ...draftComment,
+              status: 'pending',
+            }
+          }
+        }
+
+        setDraftDecisions(nextDraftDecisions)
+      } catch (error) {
+        if (!cancelled) {
+          setLoadError(error instanceof Error ? error.message : 'Failed to load patches')
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void loadPatches()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const selectedPatch =
+    patches.find((patch) => patch.index === selectedPatchId) ?? null
+  const selectedPatchFiles = selectedPatch ? parsePatchDiff(selectedPatch) : []
+  const selectedComments = selectedPatch
+    ? commentsByPatch[selectedPatch.index] ?? []
+    : []
+
+  const totalCommentCount = Object.values(commentsByPatch).reduce(
+    (count, patchComments) => count + patchComments.length,
+    0,
+  )
+  const totalResolvedDrafts = Object.values(draftDecisions).filter(
+    (draft) => draft.status !== 'pending',
+  ).length
+
+  const handleDraftDecisionChange = (
+    draftId: string,
+    status: AgentDraftCommentDecision['status'],
+  ) => {
+    setDraftDecisions((current) => {
+      const draftComment = current[draftId]
+      if (!draftComment) {
+        return current
+      }
+
+      return {
+        ...current,
+        [draftId]: {
+          ...draftComment,
+          status,
+        },
+      }
+    })
+  }
+
+  const openComposer = (
+    patchIndex: number,
+    lineKey: string,
+    file: string,
+    line: number,
+    side: ReviewSide,
+  ) => {
+    setComposer({
+      patchIndex,
+      lineKey,
+      file,
+      line,
+      side,
+    })
+    setComposerText('')
+  }
+
+  const saveComment = () => {
+    if (!composer) {
+      return
+    }
+
+    const body = composerText.trim()
+    if (!body) {
+      return
+    }
+
+    const newComment: LocalComment = {
+      id: `${composer.patchIndex}-${composer.file}-${composer.side}-${composer.line}-${Date.now()}`,
+      sub: composer.patchIndex,
+      file: composer.file,
+      line: composer.line,
+      side: composer.side,
+      body,
+      source: 'human',
+    }
+
+    setCommentsByPatch((current) => ({
+      ...current,
+      [composer.patchIndex]: [...(current[composer.patchIndex] ?? []), newComment],
+    }))
+    setComposer(null)
+    setComposerText('')
+  }
+
+  const removeComment = (patchIndex: number, commentId: string) => {
+    setCommentsByPatch((current) => ({
+      ...current,
+      [patchIndex]: (current[patchIndex] ?? []).filter(
+        (comment) => comment.id !== commentId,
+      ),
+    }))
+  }
+
+  const submitReview = async () => {
+    const payload: ReviewSubmission = {
+      comments: Object.values(commentsByPatch).flat(),
+      draftComments: Object.values(draftDecisions),
+    }
+
+    setSubmitting(true)
+    setSubmitError(null)
+    setSubmitted(false)
+
+    try {
+      const response = await fetch('/api/submit', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to submit review (${response.status})`)
+      }
+
+      const body = (await response.json()) as ReviewSubmission
+      if (!isSubmissionShape(body)) {
+        throw new Error('Server returned an unexpected response shape')
+      }
+
+      setSubmitted(true)
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Failed to submit review')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-6 py-10">
+        <Card className="w-full max-w-lg">
+          <CardContent className="flex items-center justify-center gap-3 py-12 text-stone-600">
+            <LoaderCircle className="size-5 animate-spin" />
+            Loading patches...
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-6 py-10">
+        <Card className="w-full max-w-lg">
+          <CardHeader>
+            <CardTitle>Unable to load patches</CardTitle>
+            <CardDescription>{loadError}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => window.location.reload()}>Reload</Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (!selectedPatch) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-6 py-10">
+        <Card className="w-full max-w-lg">
+          <CardHeader>
+            <CardTitle>No patches available</CardTitle>
+            <CardDescription>The backend returned an empty patch list.</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    )
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="min-h-screen bg-transparent text-stone-900">
+      <div className="mx-auto flex min-h-screen w-full max-w-[1680px] flex-col lg:flex-row">
+        <aside className="border-b border-stone-300/80 bg-stone-950 text-stone-100 lg:min-h-screen lg:w-[340px] lg:border-b-0 lg:border-r">
+          <div className="sticky top-0 flex flex-col gap-6 bg-stone-950/95 p-6 backdrop-blur">
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-[0.32em] text-amber-300/80">
+                Review Deck
+              </p>
+              <h1 className="font-serif text-3xl font-semibold text-stone-50">
+                Patch Review
+              </h1>
+              <p className="text-sm text-stone-400">
+                Review patch metadata, inspect diffs, add line comments, then submit one payload to the CLI server.
+              </p>
+            </div>
 
-      <div className="ticks"></div>
+            <div className="grid grid-cols-2 gap-3">
+              <SummaryTile label="Patches" value={String(patches.length)} />
+              <SummaryTile label="Comments" value={String(totalCommentCount)} />
+              <SummaryTile label="Drafts" value={String(Object.keys(draftDecisions).length)} />
+              <SummaryTile label="Resolved" value={String(totalResolvedDrafts)} />
+            </div>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+            <div className="space-y-3">
+              <p className="text-xs font-medium uppercase tracking-[0.28em] text-stone-500">
+                Patch Queue
+              </p>
+              <div className="space-y-2">
+                {patches.map((patch) => {
+                  const isSelected = patch.index === selectedPatch.index
+                  const patchComments = commentsByPatch[patch.index] ?? []
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+                  return (
+                    <button
+                      key={patch.index}
+                      className={[
+                        'w-full rounded-2xl border p-4 text-left transition-colors',
+                        isSelected
+                          ? 'border-amber-300 bg-amber-50 text-stone-950'
+                          : 'border-stone-800 bg-stone-900/80 text-stone-100 hover:border-stone-700 hover:bg-stone-900',
+                      ].join(' ')}
+                      onClick={() => {
+                        setSelectedPatchId(patch.index)
+                        setComposer(null)
+                        setComposerText('')
+                      }}
+                      type="button"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <Badge variant={isSelected ? 'accent' : 'default'}>
+                              #{patch.index}
+                            </Badge>
+                            <span className="text-xs uppercase tracking-[0.24em] text-stone-500">
+                              Group {patch.index}
+                            </span>
+                          </div>
+                          <p className="mt-3 line-clamp-2 text-sm leading-6">
+                            {patch.description}
+                          </p>
+                        </div>
+                        <ChevronRight
+                          className={[
+                            'mt-0.5 size-4 shrink-0',
+                            isSelected ? 'text-amber-700' : 'text-stone-500',
+                          ].join(' ')}
+                        />
+                      </div>
+                      <div className="mt-4 flex items-center gap-2 text-xs text-stone-500">
+                        <span>{patch.draftComments.length} draft hints</span>
+                        <span className="size-1 rounded-full bg-current opacity-50" />
+                        <span>{patchComments.length} comments</span>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <main className="flex-1 px-4 py-4 pb-40 sm:px-6 lg:px-8">
+          <div className="mx-auto flex max-w-[1200px] flex-col gap-5">
+            <Card>
+              <CardHeader className="gap-4 md:flex-row md:items-start md:justify-between">
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="accent">Patch #{selectedPatch.index}</Badge>
+                    <Badge>{selectedPatchFiles.length} file{selectedPatchFiles.length === 1 ? '' : 's'}</Badge>
+                    <Badge>{selectedComments.length} comment{selectedComments.length === 1 ? '' : 's'}</Badge>
+                  </div>
+                  <div>
+                    <CardTitle>{selectedPatch.description}</CardTitle>
+                    <CardDescription className="mt-2 max-w-3xl text-base leading-7">
+                      Review the metadata here, then inspect the diff below. Comments attach to changed lines and will be submitted as human review comments.
+                    </CardDescription>
+                  </div>
+                </div>
+                <div className="grid gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600 sm:grid-cols-2">
+                  <MetaItem label="Group Index" value={String(selectedPatch.index)} />
+                  <MetaItem label="Draft Comments" value={String(selectedPatch.draftComments.length)} />
+                </div>
+              </CardHeader>
+              {selectedPatch.draftComments.length > 0 ? (
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">
+                      Agent Draft Comments
+                    </h3>
+                    <span className="text-sm text-stone-500">
+                      Mark each suggestion as accepted, rejected, or keep pending.
+                    </span>
+                  </div>
+                  <div className="space-y-3">
+                    {selectedPatch.draftComments.map((draftComment: SubPatch['draftComments'][number]) => {
+                      const decision = draftDecisions[draftComment.id]
+
+                      return (
+                        <div
+                          key={draftComment.id}
+                          className="rounded-2xl border border-stone-200 bg-stone-50 p-4"
+                        >
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge>{draftComment.file}</Badge>
+                            <Badge variant="accent">
+                              {draftComment.side === 'additions' ? 'Addition' : 'Deletion'} line {draftComment.line}
+                            </Badge>
+                            <Badge variant={decision?.status === 'accepted' ? 'success' : decision?.status === 'rejected' ? 'destructive' : 'default'}>
+                              {decision?.status ?? 'pending'}
+                            </Badge>
+                          </div>
+                          <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-stone-700">
+                            {draftComment.body}
+                          </p>
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <DecisionButton
+                              active={decision?.status === 'accepted'}
+                              label="Accept"
+                              onClick={() => handleDraftDecisionChange(draftComment.id, 'accepted')}
+                            />
+                            <DecisionButton
+                              active={decision?.status === 'rejected'}
+                              label="Reject"
+                              onClick={() => handleDraftDecisionChange(draftComment.id, 'rejected')}
+                            />
+                            <DecisionButton
+                              active={decision?.status === 'pending'}
+                              label="Pending"
+                              onClick={() => handleDraftDecisionChange(draftComment.id, 'pending')}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              ) : null}
+            </Card>
+
+            <Card className="overflow-hidden">
+              <CardHeader className="gap-3 border-b border-stone-200 bg-stone-50/80">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <CardTitle>Diff Review</CardTitle>
+                    <CardDescription className="mt-1">
+                      Context lines stay neutral, deletions are red, additions are green. Use the comment action on change lines to add review notes.
+                    </CardDescription>
+                  </div>
+                  <Badge>{selectedPatch.diff.split('\n').length} lines</Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {selectedPatchFiles.length === 0 ? (
+                  <div className="px-6 py-10 text-sm text-stone-500">
+                    This patch did not parse into file diffs.
+                  </div>
+                ) : (
+                  <div className="divide-y divide-stone-200">
+                    {selectedPatchFiles.map((file) => (
+                      <section key={file.key} className="bg-white">
+                        <div className="flex flex-wrap items-center gap-3 border-b border-stone-200 bg-stone-50 px-4 py-3 text-sm">
+                          <Badge>{file.srcFile}</Badge>
+                          {file.srcFile !== file.dstFile ? (
+                            <>
+                              <ChevronRight className="size-4 text-stone-400" />
+                              <Badge>{file.dstFile}</Badge>
+                            </>
+                          ) : null}
+                        </div>
+
+                        {file.hunks.map((hunk) => (
+                          <div key={hunk.header} className="border-b border-stone-200 last:border-b-0">
+                            <div className="border-b border-stone-200 bg-stone-950 px-4 py-2 font-mono text-xs text-stone-300">
+                              {hunk.header}
+                            </div>
+                            <div className="overflow-x-auto">
+                              <div className="min-w-[780px] font-mono text-sm">
+                                {hunk.lines.map((line) => {
+                                  const commentTarget = line.commentTarget
+                                  const lineComments = getCommentsForLine(
+                                    selectedComments,
+                                    commentTarget,
+                                  )
+                                  const isComposerLine =
+                                    composer?.patchIndex === selectedPatch.index &&
+                                    composer.lineKey === line.key
+
+                                  return (
+                                    <div key={line.key} className="border-b border-stone-100 last:border-b-0">
+                                      <div
+                                        className={[
+                                          'group grid grid-cols-[72px_72px_minmax(0,1fr)_96px] items-start gap-0',
+                                          line.kind === 'add'
+                                            ? 'bg-emerald-50/90'
+                                            : line.kind === 'delete'
+                                              ? 'bg-rose-50/90'
+                                              : line.kind === 'meta'
+                                                ? 'bg-stone-100'
+                                                : 'bg-white',
+                                        ].join(' ')}
+                                      >
+                                        <LineNumberCell value={line.oldLineNumber} />
+                                        <LineNumberCell value={line.newLineNumber} />
+                                        <pre className="overflow-x-auto px-4 py-2 whitespace-pre-wrap break-words text-stone-800">
+                                          <span className="mr-3 select-none text-stone-400">
+                                            {line.kind === 'add'
+                                              ? '+'
+                                              : line.kind === 'delete'
+                                                ? '-'
+                                                : line.kind === 'meta'
+                                                  ? '\\'
+                                                  : ' '}
+                                          </span>
+                                          {line.content}
+                                        </pre>
+                                        <div className="flex items-center justify-end px-3 py-2">
+                                          {commentTarget ? (
+                                            <Button
+                                              className="opacity-0 transition-opacity group-hover:opacity-100"
+                                              onClick={() =>
+                                                openComposer(
+                                                  selectedPatch.index,
+                                                  line.key,
+                                                  commentTarget.file,
+                                                  commentTarget.line,
+                                                  commentTarget.side,
+                                                )
+                                              }
+                                              size="sm"
+                                              type="button"
+                                              variant="ghost"
+                                            >
+                                              <MessageSquarePlus className="size-3.5" />
+                                              Comment
+                                            </Button>
+                                          ) : null}
+                                        </div>
+                                      </div>
+
+                                      {lineComments.length > 0 ? (
+                                        <div className="space-y-2 border-t border-stone-100 bg-stone-50 px-4 py-3">
+                                          {lineComments.map((comment) => (
+                                            <div
+                                              key={comment.id}
+                                              className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm"
+                                            >
+                                              <div className="flex items-center justify-between gap-3">
+                                                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-stone-500">
+                                                  <span>Human Comment</span>
+                                                  <span className="size-1 rounded-full bg-stone-300" />
+                                                  <span>{comment.side}</span>
+                                                </div>
+                                                <Button
+                                                  onClick={() =>
+                                                    removeComment(selectedPatch.index, comment.id)
+                                                  }
+                                                  size="sm"
+                                                  type="button"
+                                                  variant="ghost"
+                                                >
+                                                  Remove
+                                                </Button>
+                                              </div>
+                                              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-stone-700">
+                                                {comment.body}
+                                              </p>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : null}
+
+                                      {isComposerLine ? (
+                                        <div className="border-t border-amber-200 bg-amber-50 px-4 py-4">
+                                          <div className="max-w-3xl space-y-3">
+                                            <p className="text-sm font-medium text-amber-900">
+                                              Add comment for {composer?.file}:{composer?.line} ({composer?.side})
+                                            </p>
+                                            <Textarea
+                                              onChange={(event) => setComposerText(event.target.value)}
+                                              placeholder="Explain the issue, risk, or follow-up for this line..."
+                                              value={composerText}
+                                            />
+                                            <div className="flex flex-wrap gap-2">
+                                              <Button
+                                                disabled={!composerText.trim()}
+                                                onClick={saveComment}
+                                                type="button"
+                                              >
+                                                <Check className="size-4" />
+                                                Save comment
+                                              </Button>
+                                              <Button
+                                                onClick={() => {
+                                                  setComposer(null)
+                                                  setComposerText('')
+                                                }}
+                                                type="button"
+                                                variant="secondary"
+                                              >
+                                                Cancel
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ) : null}
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </section>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+      </div>
+
+      <div className="fixed bottom-6 right-6 z-50">
+        <Card className="min-w-[300px] border-stone-900 bg-stone-950 text-stone-50 shadow-2xl">
+          <CardContent className="flex flex-col gap-4 p-4">
+            <div className="space-y-1">
+              <p className="text-xs uppercase tracking-[0.28em] text-amber-300/80">
+                Review Summary
+              </p>
+              <p className="text-sm text-stone-300">
+                {totalCommentCount} human comments, {totalResolvedDrafts} draft decisions updated.
+              </p>
+              {submitError ? (
+                <p className="text-sm text-rose-300">{submitError}</p>
+              ) : submitted ? (
+                <p className="text-sm text-emerald-300">
+                  Review submitted successfully.
+                </p>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                className="bg-amber-400 text-stone-950 hover:bg-amber-300"
+                disabled={submitting}
+                onClick={submitReview}
+                type="button"
+              >
+                {submitting ? (
+                  <>
+                    <LoaderCircle className="size-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Send className="size-4" />
+                    Submit Review
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={() => {
+                  setSubmitted(false)
+                  setSubmitError(null)
+                }}
+                type="button"
+                variant="secondary"
+              >
+                Clear Status
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   )
+}
+
+function SummaryTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-stone-800 bg-stone-900/80 px-4 py-3">
+      <p className="text-xs uppercase tracking-[0.24em] text-stone-500">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-stone-50">{value}</p>
+    </div>
+  )
+}
+
+function MetaItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-[0.24em] text-stone-500">{label}</p>
+      <p className="mt-1 font-medium text-stone-800">{value}</p>
+    </div>
+  )
+}
+
+function DecisionButton({
+  active,
+  label,
+  onClick,
+}: {
+  active: boolean
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <Button
+      className={active ? 'border-stone-900 bg-stone-900 text-stone-50 hover:bg-stone-800' : undefined}
+      onClick={onClick}
+      size="sm"
+      type="button"
+      variant="secondary"
+    >
+      {label}
+    </Button>
+  )
+}
+
+function LineNumberCell({ value }: { value?: number }) {
+  return (
+    <div className="border-r border-stone-200 px-3 py-2 text-right text-xs text-stone-400">
+      {value ?? ''}
+    </div>
+  )
+}
+
+function getCommentsForLine(
+  comments: LocalComment[],
+  target?: { file: string; line: number; side: ReviewSide },
+) {
+  if (!target) {
+    return []
+  }
+
+  return comments.filter(
+    (comment) =>
+      comment.file === target.file &&
+      comment.line === target.line &&
+      comment.side === target.side,
+  )
+}
+
+function isSubmissionShape(value: unknown): value is ReviewSubmission {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+
+  return (
+    Array.isArray((value as ReviewSubmission).comments) &&
+    Array.isArray((value as ReviewSubmission).draftComments)
+  )
+}
+
+function parsePatchDiff(patch: SubPatch): ParsedDiffFile[] {
+  const files: ParsedDiffFile[] = []
+  const lines = patch.diff.split('\n')
+
+  let currentFile: ParsedDiffFile | null = null
+  let currentHunk: ParsedHunk | null = null
+  let oldLineNumber = 0
+  let newLineNumber = 0
+  let lineIndex = 0
+
+  for (const rawLine of lines) {
+    if (rawLine.startsWith('diff --git ')) {
+      const match = rawLine.match(/^diff --git a\/(.+?) b\/(.+)$/)
+      if (!match) {
+        continue
+      }
+
+      currentFile = {
+        key: `${match[1]}-${match[2]}-${files.length}`,
+        srcFile: match[1],
+        dstFile: match[2],
+        hunks: [],
+      }
+      files.push(currentFile)
+      currentHunk = null
+      continue
+    }
+
+    if (!currentFile) {
+      continue
+    }
+
+    if (rawLine.startsWith('@@')) {
+      const match = rawLine.match(/^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/)
+      if (!match) {
+        continue
+      }
+
+      oldLineNumber = Number(match[1])
+      newLineNumber = Number(match[3])
+      currentHunk = {
+        header: rawLine,
+        lines: [],
+      }
+      currentFile.hunks.push(currentHunk)
+      continue
+    }
+
+    if (!currentHunk) {
+      continue
+    }
+
+    const lineKey = `${currentFile.key}-${currentHunk.header}-${lineIndex}`
+    lineIndex += 1
+
+    if (rawLine.startsWith('\\')) {
+      currentHunk.lines.push({
+        key: lineKey,
+        kind: 'meta',
+        content: rawLine.slice(1).trimStart(),
+      })
+      continue
+    }
+
+    const marker = rawLine[0]
+    const content = rawLine.slice(1)
+
+    if (marker === ' ') {
+      currentHunk.lines.push({
+        key: lineKey,
+        kind: 'context',
+        content,
+        oldLineNumber,
+        newLineNumber,
+      })
+      oldLineNumber += 1
+      newLineNumber += 1
+      continue
+    }
+
+    if (marker === '-') {
+      currentHunk.lines.push({
+        key: lineKey,
+        kind: 'delete',
+        content,
+        oldLineNumber,
+        commentTarget: {
+          file: currentFile.srcFile,
+          line: oldLineNumber,
+          side: 'deletions',
+        },
+      })
+      oldLineNumber += 1
+      continue
+    }
+
+    if (marker === '+') {
+      currentHunk.lines.push({
+        key: lineKey,
+        kind: 'add',
+        content,
+        newLineNumber,
+        commentTarget: {
+          file: currentFile.dstFile,
+          line: newLineNumber,
+          side: 'additions',
+        },
+      })
+      newLineNumber += 1
+      continue
+    }
+
+    currentHunk.lines.push({
+      key: lineKey,
+      kind: 'meta',
+      content: rawLine,
+    })
+  }
+
+  return files
 }
 
 export default App
