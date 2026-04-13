@@ -38,17 +38,17 @@ export type I18nMessages = {
       resolved: string
     }
     patchQueueTitle: string
-    patchGroupLabel: (index: number) => string
-    draftHints: (count: number) => string
-    commentCount: (count: number) => string
-    patchBadge: (index: number) => string
-    fileCount: (count: number) => string
+    patchGroupLabel: ({ index }: { index: number }) => string
+    draftHints: ({ count }: { count: number }) => string
+    commentCount: ({ count }: { count: number }) => string
+    patchBadge: ({ index }: { index: number }) => string
+    fileCount: ({ count }: { count: number }) => string
     metadataDescription: string
     groupIndex: string
     draftComments: string
     agentDraftCommentsTitle: string
     agentDraftCommentsHint: string
-    linePositionLabel: (sideLabel: string, line: number) => string
+    linePositionLabel: ({ sideLabel, line }: { sideLabel: string, line: number }) => string
     decisionActions: {
       accept: string
       reject: string
@@ -56,7 +56,7 @@ export type I18nMessages = {
     }
     diffTitle: string
     diffDescription: string
-    diffLineCount: (count: number) => string
+    diffLineCount: ({ count }: { count: number }) => string
     diffParseFallback: string
     fileState: {
       deleted: string
@@ -65,15 +65,23 @@ export type I18nMessages = {
     addComment: string
     humanComment: string
     remove: string
-    composerTitle: (file: string, line: number, sideLabel: string) => string
+    composerTitle: ({ file, line, sideLabel }: { file: string, line: number, sideLabel: string }) => string
     composerPlaceholder: string
     saveComment: string
     cancel: string
     floatingSummaryTitle: string
-    floatingSummaryDescription: (commentCount: number, resolvedCount: number) => string
+    floatingSummaryDescription: ({ commentCount, resolvedCount }: { commentCount: number, resolvedCount: number }) => string
     submittedSuccess: string
     submitting: string
     submitReview: string
     clearStatus: string
   }
 }
+
+type Join<K, P> = K extends string | number ? P extends string | number ? `${K}.${P}` : never : never
+
+type NestedKeys<T> = T extends object ? {
+  [K in keyof T & string]: T[K] extends object ? K | Join<K, NestedKeys<T[K]>> : K
+}[keyof T & string] : never
+
+export type I18nKey = NestedKeys<I18nMessages>

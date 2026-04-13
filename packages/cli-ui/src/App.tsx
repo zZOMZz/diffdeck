@@ -40,7 +40,7 @@ import { useI18n } from './i18n/useI18n'
 import type { ComposerState, LocalComment } from './types/review'
 
 function App() {
-  const { locale, setLocale, messages } = useI18n()
+  const { locale, setLocale, t } = useI18n()
   const [patches, setPatches] = useState<SubPatch[]>([])
   const [selectedPatchId, setSelectedPatchId] = useState<number | null>(null)
   const [commentsByPatch, setCommentsByPatch] = useState<
@@ -240,7 +240,7 @@ function App() {
         <Card className="w-full max-w-lg">
           <CardContent className="flex items-center justify-center gap-3 py-12 text-stone-600">
             <LoaderCircle className="size-5 animate-spin" />
-            {messages.review.loading}
+            {t('review.loading')}
           </CardContent>
         </Card>
       </div>
@@ -252,12 +252,12 @@ function App() {
       <div className="flex min-h-screen items-center justify-center px-6 py-10">
         <Card className="w-full max-w-lg">
           <CardHeader>
-            <CardTitle>{messages.review.loadErrorTitle}</CardTitle>
+            <CardTitle>{t('review.loadErrorTitle')}</CardTitle>
             <CardDescription>{loadError}</CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={() => window.location.reload()}>
-              {messages.review.reload}
+              {t('review.reload')}
             </Button>
           </CardContent>
         </Card>
@@ -270,9 +270,9 @@ function App() {
       <div className="flex min-h-screen items-center justify-center px-6 py-10">
         <Card className="w-full max-w-lg">
           <CardHeader>
-            <CardTitle>{messages.review.emptyStateTitle}</CardTitle>
+            <CardTitle>{t('review.emptyStateTitle')}</CardTitle>
             <CardDescription>
-              {messages.review.emptyStateDescription}
+              {t('review.emptyStateDescription')}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -290,7 +290,7 @@ function App() {
                 className="block text-xs font-medium uppercase tracking-[0.24em] text-stone-500"
                 htmlFor="locale-select"
               >
-                {messages.common.localeLabel}
+                {t('common.localeLabel')}
               </label>
               <select
                 className="w-full rounded-xl border border-stone-700 bg-stone-900 px-3 py-2 text-sm text-stone-100 outline-none focus:border-amber-300"
@@ -300,7 +300,7 @@ function App() {
               >
                 {supportedLocales.map((supportedLocale) => (
                   <option key={supportedLocale} value={supportedLocale}>
-                    {messages.common.localeOptions[supportedLocale]}
+                    {t(`common.localeOptions.${supportedLocale}`)}
                   </option>
                 ))}
               </select>
@@ -308,38 +308,38 @@ function App() {
 
             <div className="space-y-2">
               <p className="text-xs uppercase tracking-[0.32em] text-amber-300/80">
-                {messages.review.deckEyebrow}
+                {t('review.deckEyebrow')}
               </p>
               <h1 className="font-serif text-3xl font-semibold text-stone-50">
-                {messages.review.pageTitle}
+                {t('review.pageTitle')}
               </h1>
               <p className="text-sm text-stone-400">
-                {messages.review.pageDescription}
+                {t('review.pageDescription')}
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <SummaryTile
-                label={messages.review.summary.patches}
+                label={t('review.summary.patches')}
                 value={String(patches.length)}
               />
               <SummaryTile
-                label={messages.review.summary.comments}
+                label={t('review.summary.comments')}
                 value={String(totalCommentCount)}
               />
               <SummaryTile
-                label={messages.review.summary.drafts}
+                label={t('review.summary.drafts')}
                 value={String(Object.keys(draftDecisions).length)}
               />
               <SummaryTile
-                label={messages.review.summary.resolved}
+                label={t('review.summary.resolved')}
                 value={String(totalResolvedDrafts)}
               />
             </div>
 
             <div className="space-y-3">
               <p className="text-xs font-medium uppercase tracking-[0.28em] text-stone-500">
-                {messages.review.patchQueueTitle}
+                {t('review.patchQueueTitle')}
               </p>
               <div className="space-y-2">
                 {patches.map((patch) => {
@@ -369,7 +369,7 @@ function App() {
                               #{patch.index}
                             </Badge>
                             <span className="text-xs uppercase tracking-[0.24em] text-stone-500">
-                              {messages.review.patchGroupLabel(patch.index)}
+                              {t('review.patchGroupLabel', { index: patch.index })}
                             </span>
                           </div>
                           <p className="mt-3 line-clamp-2 text-sm leading-6">
@@ -384,9 +384,9 @@ function App() {
                         />
                       </div>
                       <div className="mt-4 flex items-center gap-2 text-xs text-stone-500">
-                        <span>{messages.review.draftHints(patch.draftComments.length)}</span>
+                        <span>{t('review.draftHints', { count: patch.draftComments.length })}</span>
                         <span className="size-1 rounded-full bg-current opacity-50" />
-                        <span>{messages.review.commentCount(patchComments.length)}</span>
+                        <span>{t('review.commentCount', { count: patchComments.length })}</span>
                       </div>
                     </button>
                   )

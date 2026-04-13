@@ -40,11 +40,11 @@ export const enMessages: I18nMessages = {
       resolved: 'Resolved',
     },
     patchQueueTitle: 'Patch Queue',
-    patchGroupLabel: (index) => `Group ${index}`,
-    draftHints: (count) => `${count} draft hints`,
-    commentCount: (count) => `${count} comments`,
-    patchBadge: (index) => `Patch #${index}`,
-    fileCount: (count) => `${count} file${count === 1 ? '' : 's'}`,
+    patchGroupLabel: ({ index }) => `Group ${index}`,
+    draftHints: ({ count }) => `${count} draft hints`,
+    commentCount: ({ count }) => `${count} comments`,
+    patchBadge: ({ index }) => `Patch #${index}`,
+    fileCount: ({ count }) => `${count} file${count === 1 ? '' : 's'}`,
     metadataDescription:
       'Review the metadata here, then inspect the diff below. Comments attach to changed lines and will be submitted as human review comments.',
     groupIndex: 'Group Index',
@@ -52,7 +52,7 @@ export const enMessages: I18nMessages = {
     agentDraftCommentsTitle: 'Agent Draft Comments',
     agentDraftCommentsHint:
       'Mark each suggestion as accepted, rejected, or keep pending.',
-    linePositionLabel: (sideLabel, line) => `${sideLabel} line ${line}`,
+    linePositionLabel: ({ sideLabel, line }) => `${sideLabel} line ${line}`,
     decisionActions: {
       accept: 'Accept',
       reject: 'Reject',
@@ -61,7 +61,7 @@ export const enMessages: I18nMessages = {
     diffTitle: 'Diff Review',
     diffDescription:
       'Context lines stay neutral, deletions are red, additions are green. Use the comment action on change lines to add review notes.',
-    diffLineCount: (count) => `${count} lines`,
+    diffLineCount: ({ count }) => `${count} lines`,
     diffParseFallback: 'This patch did not parse into file diffs.',
     fileState: {
       deleted: 'Deleted',
@@ -70,13 +70,13 @@ export const enMessages: I18nMessages = {
     addComment: 'Comment',
     humanComment: 'Human Comment',
     remove: 'Remove',
-    composerTitle: (file, line, sideLabel) =>
+    composerTitle: ({ file, line, sideLabel }) =>
       `Add comment for ${file}:${line} (${sideLabel})`,
     composerPlaceholder: 'Explain the issue, risk, or follow-up for this line...',
     saveComment: 'Save comment',
     cancel: 'Cancel',
     floatingSummaryTitle: 'Review Summary',
-    floatingSummaryDescription: (commentCount, resolvedCount) =>
+    floatingSummaryDescription: ({ commentCount, resolvedCount }) =>
       `${commentCount} human comments, ${resolvedCount} draft decisions updated.`,
     submittedSuccess: 'Review submitted successfully.',
     submitting: 'Submitting...',

@@ -8,7 +8,6 @@
  */
 
 import type {
-  AgentDraftComment,
   ChangeItem,
   FilePatch,
   IndexedChange,

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, type PropsWithChildren } from 'react'
 import { I18nContext } from './context'
 import { enMessages } from './locales/en'
 import { zhCNMessages } from './locales/zh-CN'
-import { supportedLocales, type I18nMessages, type Locale } from './types'
+import { supportedLocales, type I18nMessages, type Locale, type I18nKey } from './types'
 
 const dictionaries: Record<Locale, I18nMessages> = {
   en: enMessages,
@@ -15,12 +15,14 @@ function isSupportedLocale(value: string | null | undefined): value is Locale {
 }
 
 function resolveInitialLocale(): Locale {
+  // url 参数优先级最高
   const params = new URLSearchParams(window.location.search)
   const localeFromQuery = params.get('lang')
   if (isSupportedLocale(localeFromQuery)) {
     return localeFromQuery
   }
 
+  // 浏览器语言
   const browserLocale = navigator.language
   if (isSupportedLocale(browserLocale)) {
     return browserLocale
@@ -31,6 +33,10 @@ function resolveInitialLocale(): Locale {
   }
 
   return 'en'
+}
+
+const get = (obj: I18nMessages, path: I18nKey): string | ((args?: Record<string | number, string | number>) => string) => {
+  return path.split('.').reduce<any>((acc, key) => acc?.[key], obj)
 }
 
 export function I18nProvider({ children }: PropsWithChildren) {
@@ -49,7 +55,20 @@ export function I18nProvider({ children }: PropsWithChildren) {
     () => ({
       locale,
       setLocale,
-      messages,
+      t: <K extends I18nKey>(key: K, args?: Record<string | number, string | number>): string => {
+        const result = get(messages, key)
+
+        if (typeof result !== 'string' && typeof result === 'function') {
+          return result(args)
+        }
+
+        if (!args || Object.keys(args).length === 0) return result
+        
+        return Object.entries(args).reduce<string>(
+          (acc, [placeholder, value]) => acc.replaceAll(`{${placeholder}}`, String(value)),
+          result,
+        )
+      }
     }),
     [locale, messages],
   )
