@@ -1,0 +1,673 @@
+diff --git a/dev/result/ai-searchbox/App.vue b/dev/result/ai-searchbox/App.vue
+--- a/dev/result/ai-searchbox/App.vue
++++ b/dev/result/ai-searchbox/App.vue
+@@ -3,7 +3,6 @@
+     ref="inputRef"
+     :search-text="searchText"
+     :diwen-data="diwenData"
+-    :current-aitool="currentAITool"
+     :current-placeholder="currentPlaceholder"
+     :exclude-ask-ai-button="excludeAskAiButton"
+     :show-diwen="showDiwen"
+@@ -15,7 +14,6 @@
+     @expand-input="handleExpand"
+     @close-input="handleClose"
+     @delete-search-text="handleDeleteSearchText"
+-    @submit-aitool="handleAIToolSubmit"
+   />
+   <Suggest
+     :suggest-data="suggestData"
+@@ -44,7 +42,6 @@
+ import Suggest from "./components/suggest/suggest.vue";
+ import { suggestService } from "./services/suggestService.js";
+ import { submitService } from "./services/submitService.js";
+-import { aitoolService } from "./services/aitoolService.js";
+ import { logService } from "./services/logService.js";
+ 
+ // 实验控制版本
+@@ -71,7 +68,8 @@
+ 
+   REPEAT_SUGGEST: "res-sug-rp", // 与搜索框内容相同的Suggest提交
+ 
+-  RICH_SUGGEST: "srp_suggst_right_nlp", // 富Suggest提交
++  RICH_SUGGEST: "srp_suggest_right_nlp", // 右侧card preview提交
++  ENTITY_SUGGEST: "srp_suggest_entity", // sugList中 card Suggest提交
+ };
+ 
+ const suggestData = ref({
+@@ -103,7 +101,6 @@
+ const initialValue = inject("initialValue", ""); // 初始化值
+ const searchText = ref(initialValue); // 当前输入框显示的文本
+ const userInputText = ref(initialValue); // 用户实际输入的原始文本（用于键盘导航时恢复）
+-const currentAITool = ref(null); // 当前关联的AI工具
+ const currentPlaceholder = ref({ word: "", default: true }); // 当前placeholder
+ const submitType = ref(SUBMIT_TYPE.DEFAULT); // 提交类型
+ 
+@@ -177,11 +174,6 @@
+ 
+ // 清空按钮点击
+ const handleDeleteSearchText = () => {
+-  logService.log({
+-    mod: "placeholder",
+-    type: "show",
+-  });
+-
+   if (!isExpanded.value) {
+     suggestData.value = {
+       suggestions: [],
+@@ -196,32 +188,12 @@
+ 
+   searchText.value = "";
+   userInputText.value = "";
+-  currentAITool.value = null;
+   selectedIndex.value = -1;
+   handleUpdateSuggestList("", true).then(() => {
+     inputRef.value?.focusTextarea();
+   });
+ };
+ 
+-// ai工具提交打点
+-const logAIToolSubmit = ({ word, aitool, type }) => {
+-  logService.log({
+-    mod: "ai-tool",
+-    type: type,
+-    value: aitool,
+-    p1: word,
+-  });
+-};
+-
+-// submit提交打点
+-const logSubmit = ({ type }) => {
+-  logService.log({
+-    mod: "s_act",
+-    type: "click",
+-    p1: type,
+-  });
+-};
+-
+ // 更新Sug列表
+ const handleUpdateSuggestList = async (
+   text,
+@@ -264,6 +236,7 @@
+     // 更新底纹词列表
+     if (diwen?.result && showDiwen) {
+       diwenData.value = diwen;
++      logService.placeholder.show();
+     }
+ 
+     if (shouldBypassCache) {
+@@ -320,12 +293,14 @@
+     const selectedSuggestion =
+       suggestData.value.suggestions[selectedIndex.value];
+     searchText.value = selectedSuggestion.word;
+-    currentAITool.value = selectedSuggestion.aitool || null;
+     
+     switch (selectedSuggestion.type) {
+       case "history":
+         submitType.value = selectedSuggestion.firstsame ? SUBMIT_TYPE.REPEAT_SUGGEST : SUBMIT_TYPE.HISTORY;
+         break;
++      case "entity":
++        submitType.value = SUBMIT_TYPE.ENTITY_SUGGEST;
++        break;
+       default:
+         submitType.value = SUBMIT_TYPE.SUGGEST;
+         break;
+@@ -333,7 +308,6 @@
+   } else {
+     // 恢复原始输入
+     searchText.value = userInputText.value;
+-    currentAITool.value = null;
+     submitType.value = SUBMIT_TYPE.DEFAULT;
+   }
+ };
+@@ -357,12 +331,9 @@
+   submitService.removeStorage(suggestion.word);
+   shouldRefreshSuggestCacheAfterDelete.value = true;
+ 
+-  // 打点
+-  const logParams = {
++  logService.suggest.log({
+     type: searchText.value.trim() ? "typing-sug-dele" : "sug-dele",
+-    mod: "suggest-log",
+-  };
+-  logService.log(logParams);
++  });
+ 
+   const suggestions = suggestData.value.suggestions || [];
+   const deleteIndex = suggestions.findIndex(
+@@ -379,7 +350,6 @@
+     if (selectedIndex.value === deleteIndex) {
+       selectedIndex.value = -1;
+       searchText.value = userInputText.value;
+-      currentAITool.value = null;
+     } else if (selectedIndex.value > deleteIndex) {
+       selectedIndex.value = selectedIndex.value - 1;
+     }
+@@ -398,15 +368,8 @@
+   isEdit.value = !isEdit.value;
+ };
+ 
+-// 处理AI工具提交
+-const handleAIToolSubmit = ({ type }) => {
+-  const submitText = searchText.value.trim();
+-  logAIToolSubmit({ word: submitText, aitool: type, type: "click" });
+-  aitoolService.submitAndOpen({ query: submitText, type: type, params: { src: "so_result_search", srcg: "so_result_search" } });
+-};
+-
+ // 处理搜索提交
+-const handleSubmit = ({ type }) => {
++const handleSubmit = () => {
+   let submitWord = searchText.value.trim();
+ 
+   // 判断是否使用placeholder
+@@ -421,29 +384,14 @@
+     }
+   }
+ 
+-  if (type) {
+-    logSubmit({ type });
+-  }
+-
+-  // 执行提交
+-  if (currentAITool.value) {
+-    logAIToolSubmit({
+-      word: submitWord,
+-      aitool: currentAITool.value,
+-      type: "suggest",
+-    });
+-    aitoolService.submitAndOpen({ query: submitWord, type: currentAITool.value, params: { src: "reg-sug-ai-nav", srcg: "so" } });
+-  } else {
+-    submitService.submitForm(submitWord, {
+-      src: submitType.value,
+-      ...submitParams.value,
+-    });
+-    handleClose();
+-  }
++  submitService.submitForm(submitWord, {
++    src: submitType.value,
++    ...submitParams.value,
++  });
++  handleClose();
+ 
+   // 重置状态
+   submitType.value = SUBMIT_TYPE.DEFAULT;
+-  currentAITool.value = null;
+ 
+   inputRef.value?.blurTextarea();
+ };
+@@ -458,14 +406,13 @@
+   // 更新搜索框状态
+   searchText.value = suggestion.word;
+   userInputText.value = suggestion.word;
+-  currentAITool.value = suggestion.aitool || null;
+ 
+   switch (suggestion.type) {
+     case "history":
+       submitType.value = suggestion.firstsame ? SUBMIT_TYPE.REPEAT_SUGGEST : SUBMIT_TYPE.HISTORY;
+       break;
+     case "entity":
+-      submitType.value = SUBMIT_TYPE.SUGGEST;
++      submitType.value = SUBMIT_TYPE.ENTITY_SUGGEST;
+       break;
+     default:
+       submitType.value = SUBMIT_TYPE.SUGGEST;
+@@ -473,7 +420,7 @@
+   }
+ 
+   // 执行提交
+-  handleSubmit({ type: "sug" });
++  handleSubmit();
+ };
+ 
+ // 处理预览点击
+@@ -481,7 +428,7 @@
+   searchText.value = suggestion.word;
+   userInputText.value = suggestion.word;
+   submitType.value = SUBMIT_TYPE.RICH_SUGGEST;
+-  handleSubmit({ type: "rich_sug" });
++  handleSubmit();
+   handleClose();
+ };
+ 
+@@ -499,17 +446,8 @@
+ 
+ // 用户输入时触发
+ const handleInputChange = (text) => {
+-  // 输入框为空时, palceholder曝光打点
+-  if (!text.trim()) {
+-    logService.log({
+-      mod: "placeholder",
+-      type: "show",
+-    });
+-  }
+-  
+   searchText.value = text; // 更新显示的文本
+   userInputText.value = text; // 记录用户输入的原始文本
+-  currentAITool.value = null; // 清除 AI 工具标记
+   selectedIndex.value = SELECTED_INDEX_DEFAULT; // 重置选中索引
+   submitType.value = SUBMIT_TYPE.DEFAULT; // 重置为默认提交类型
+   handleUpdateSuggestList(text, true);
+@@ -538,7 +476,6 @@
+ 
+   if (state.q) {
+     searchText.value = state.q;
+-    currentAITool.value = null;
+     selectedIndex.value = SELECTED_INDEX_DEFAULT;
+   }
+ };
+@@ -548,7 +485,6 @@
+   const trimmedText = text?.trim() || "";
+   searchText.value = trimmedText;
+   userInputText.value = trimmedText;
+-  currentAITool.value = null;
+   selectedIndex.value = SELECTED_INDEX_DEFAULT;
+   submitType.value = SUBMIT_TYPE.DEFAULT;
+   handleClose();
+diff --git a/dev/result/ai-searchbox/components/icons/AiToolsIcon.vue b/dev/result/ai-searchbox/components/icons/AiToolsIcon.vue
+deleted file mode 100644
+--- a/dev/result/ai-searchbox/components/icons/AiToolsIcon.vue
++++ /dev/null
+@@ -1,133 +1,0 @@
+-<template>
+-  <svg
+-    xmlns="http://www.w3.org/2000/svg"
+-    width="16"
+-    height="16"
+-    viewBox="0 0 16 16"
+-    fill="none"
+-  >
+-    <g clip-path="url(#clip0_7703_9585)">
+-      <g filter="url(#filter0_ii_7703_9585)">
+-        <path
+-          d="M7.04449 0.991788C7.41582 0.090141 8.72624 0.198848 8.94391 1.14936L9.63504 4.1672C9.89612 5.3072 10.6682 6.26316 11.7277 6.75831L14.0037 7.82198C14.8447 8.21501 14.7429 9.44219 13.8487 9.69127L11.3243 10.3944C10.2573 10.6916 9.3733 11.4401 8.90432 12.4436L7.79488 14.8176C7.40185 15.6586 6.17468 15.5568 5.9256 14.6625L5.2225 12.1382C4.92529 11.0711 4.17674 10.1872 3.17323 9.71818L0.799263 8.60875C-0.041741 8.21571 0.0600583 6.98854 0.954329 6.73946L3.37452 6.06537C4.50115 5.75157 5.42019 4.93589 5.86554 3.8545L7.04449 0.991788Z"
+-          fill="url(#paint0_linear_7703_9585)"
+-        />
+-      </g>
+-      <g filter="url(#filter1_i_7703_9585)">
+-        <path
+-          d="M13.5813 0.185208C13.6672 -0.0215901 13.9678 0.00334735 14.0184 0.221473L14.3058 1.45907C14.362 1.70119 14.5268 1.90385 14.7523 2.00832L15.7266 2.45961C15.9214 2.54982 15.8978 2.8339 15.6909 2.89079L14.6332 3.1815C14.4063 3.24387 14.2179 3.40226 14.1176 3.61511L13.6513 4.604C13.5604 4.79673 13.2791 4.77339 13.2212 4.56832L12.9242 3.51611C12.8603 3.28963 12.7007 3.10238 12.4871 3.00347L11.4918 2.54246C11.2971 2.45225 11.3206 2.16816 11.5276 2.11127L12.5629 1.8267C12.8026 1.76082 12.9985 1.58808 13.0939 1.35853L13.5813 0.185208Z"
+-          fill="#7FB0FF"
+-        />
+-      </g>
+-      <path
+-        d="M1.84942 11.8131C1.91127 11.6186 2.18648 11.6186 2.24833 11.8131L2.57549 12.8419C2.6439 13.057 2.80766 13.2285 3.01936 13.3069L3.86954 13.6215C4.05175 13.6889 4.05175 13.9466 3.86954 14.0141L2.99979 14.3359C2.79928 14.4101 2.64119 14.5682 2.567 14.7687L2.24516 15.6384C2.17774 15.8206 1.92001 15.8206 1.85259 15.6384L1.53075 14.7687C1.45656 14.5682 1.29847 14.4101 1.09796 14.3359L0.228213 14.0141C0.0459968 13.9466 0.0459969 13.6889 0.228213 13.6215L1.07839 13.3069C1.29009 13.2285 1.45385 13.057 1.52226 12.8419L1.84942 11.8131Z"
+-        fill="#465CFF"
+-      />
+-    </g>
+-    <defs>
+-      <filter
+-        id="filter0_ii_7703_9585"
+-        x="-1.77734"
+-        y="-0.627563"
+-        width="16.3579"
+-        height="17.022"
+-        filterUnits="userSpaceOnUse"
+-        color-interpolation-filters="sRGB"
+-      >
+-        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+-        <feBlend
+-          mode="normal"
+-          in="SourceGraphic"
+-          in2="BackgroundImageFix"
+-          result="shape"
+-        />
+-        <feColorMatrix
+-          in="SourceAlpha"
+-          type="matrix"
+-          values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+-          result="hardAlpha"
+-        />
+-        <feOffset dy="-1" />
+-        <feGaussianBlur stdDeviation="1" />
+-        <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1" />
+-        <feColorMatrix
+-          type="matrix"
+-          values="0 0 0 0 0.769374 0 0 0 0 0.553627 0 0 0 0 1 0 0 0 0.3 0"
+-        />
+-        <feBlend
+-          mode="normal"
+-          in2="shape"
+-          result="effect1_innerShadow_7703_9585"
+-        />
+-        <feColorMatrix
+-          in="SourceAlpha"
+-          type="matrix"
+-          values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+-          result="hardAlpha"
+-        />
+-        <feOffset dx="-3" dy="1" />
+-        <feGaussianBlur stdDeviation="1" />
+-        <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1" />
+-        <feColorMatrix
+-          type="matrix"
+-          values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.5 0"
+-        />
+-        <feBlend
+-          mode="normal"
+-          in2="effect1_innerShadow_7703_9585"
+-          result="effect2_innerShadow_7703_9585"
+-        />
+-      </filter>
+-      <filter
+-        id="filter1_i_7703_9585"
+-        x="11.3584"
+-        y="-0.0719771"
+-        width="4.50195"
+-        height="4.80818"
+-        filterUnits="userSpaceOnUse"
+-        color-interpolation-filters="sRGB"
+-      >
+-        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+-        <feBlend
+-          mode="normal"
+-          in="SourceGraphic"
+-          in2="BackgroundImageFix"
+-          result="shape"
+-        />
+-        <feColorMatrix
+-          in="SourceAlpha"
+-          type="matrix"
+-          values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+-          result="hardAlpha"
+-        />
+-        <feOffset dy="-0.11519" />
+-        <feGaussianBlur stdDeviation="0.172785" />
+-        <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1" />
+-        <feColorMatrix
+-          type="matrix"
+-          values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.84 0"
+-        />
+-        <feBlend
+-          mode="normal"
+-          in2="shape"
+-          result="effect1_innerShadow_7703_9585"
+-        />
+-      </filter>
+-      <linearGradient
+-        id="paint0_linear_7703_9585"
+-        x1="10.0002"
+-        y1="1.00012"
+-        x2="7.02125"
+-        y2="15.6064"
+-        gradientUnits="userSpaceOnUse"
+-      >
+-        <stop stop-color="#008CF8" />
+-        <stop offset="0.50122" stop-color="#3760F0" />
+-        <stop offset="0.999443" stop-color="#5E00FF" />
+-      </linearGradient>
+-      <clipPath id="clip0_7703_9585">
+-        <rect width="16" height="16" fill="white" />
+-      </clipPath>
+-    </defs>
+-  </svg>
+-</template>
+diff --git a/dev/result/ai-searchbox/components/icons/BaseIcon.vue b/dev/result/ai-searchbox/components/icons/BaseIcon.vue
+--- a/dev/result/ai-searchbox/components/icons/BaseIcon.vue
++++ b/dev/result/ai-searchbox/components/icons/BaseIcon.vue
+@@ -11,7 +11,6 @@
+ import IconDelete from "./IconDelete.vue";
+ import IconSearch from "./IconSearch.vue";
+ import StarIcon from "./StarIcon.vue";
+-import AiToolsIcon from "./AiToolsIcon.vue";
+ import History from "./History.vue";
+ import SugSearchIcon from "./sugSearchIcon.vue";
+ 
+@@ -20,7 +19,7 @@
+     type: String,
+     required: true,
+     validator: (value) =>
+-      ["write", "images", "ppt", "translate", "delete", "search", "star", "aitools", "history", "sugSearch"].includes(
++      ["write", "images", "ppt", "translate", "delete", "search", "star", "history", "sugSearch"].includes(
+         value
+       ),
+   },
+@@ -34,7 +33,6 @@
+   delete: IconDelete,
+   search: IconSearch,
+   star: StarIcon,
+-  aitools: AiToolsIcon,
+   history: History,
+   sugSearch: SugSearchIcon,
+ };
+diff --git a/dev/result/ai-searchbox/components/input/components/input-actions.vue b/dev/result/ai-searchbox/components/input/components/input-actions.vue
+--- a/dev/result/ai-searchbox/components/input/components/input-actions.vue
++++ b/dev/result/ai-searchbox/components/input/components/input-actions.vue
+@@ -1,7 +1,8 @@
+ <template>
+   <div class="ai-input-actions" @mousedown.prevent @click.stop>
+     <div v-if="!props.excludeAskAiButton" class="left-actions">
+-      <div v-for="tool in aiTools" :key="tool.type" class="left-item" @click="handleClick(tool.type)">
++      <!-- TODO: AITOOLS 相关按钮, 目前已经全部下线, 此部分代码保留, 后续如果有需要可以恢复 -->
++      <div v-for="tool in aiTools" :key="tool.type" class="left-item" @click="$emit('submit-aitool', { type: tool.type })">
+         <div class="left-item-icon">
+           <BaseIcon :name="tool.icon" />
+         </div>
+@@ -50,13 +51,4 @@
+ const aiTools = [
+   { type: "aitools", icon: "aitools", label: "问AI" },
+ ];
+-
+-
+-const handleClick = (type) => {
+-  // 处理 AI 功能点击
+-  emit("submit-aitool", {
+-    type,
+-  });
+-};
+-
+ </script>
+diff --git a/dev/result/ai-searchbox/components/input/input.vue b/dev/result/ai-searchbox/components/input/input.vue
+--- a/dev/result/ai-searchbox/components/input/input.vue
++++ b/dev/result/ai-searchbox/components/input/input.vue
+@@ -20,7 +20,6 @@
+       :placeholder="props.currentPlaceholder"
+       @submit="$emit('submit', $event)"
+       @delete="$emit('delete-search-text')"
+-      @submit-aitool="$emit('submit-aitool', $event)"
+     />
+   </div>
+ </template>
+@@ -39,10 +38,6 @@
+     type: Object,
+     default: () => ({}),
+   },
+-  currentAitool: {
+-    type: String,
+-    default: null,
+-  },
+   currentPlaceholder: {
+     type: Object,
+     default: () => ({ word: "", default: true }),
+@@ -65,7 +60,6 @@
+   "close-input",
+   "delete-search-text",
+   "request-suggest",
+-  "submit-aitool",
+   "placeholder-change",
+ ]);
+ 
+diff --git a/dev/result/ai-searchbox/components/suggest/components/AIToolTag.vue b/dev/result/ai-searchbox/components/suggest/components/AIToolTag.vue
+deleted file mode 100644
+--- a/dev/result/ai-searchbox/components/suggest/components/AIToolTag.vue
++++ /dev/null
+@@ -1,24 +1,0 @@
+-<template>
+-  <span class="ai-suggest-item-aitool">
+-    用<BaseIcon name="star" class="ai-suggest-item-aitool-icon" />AI{{ toolLabel }}
+-  </span>
+-</template>
+-
+-<script setup>
+-import { computed } from "vue";
+-import BaseIcon from "../../icons/BaseIcon.vue";
+-import AIToolService from "../../../services/aitoolService.js";
+-
+-const props = defineProps({
+-  type: {
+-    type: String,
+-    required: true,
+-    validator: (value) => ["images", "write", "ppt", "translate"].includes(value),
+-  },
+-});
+-
+-const toolLabel = computed(() => {
+-  return AIToolService.TOOL_LABELS[props.type] || "";
+-});
+-</script>
+-
+diff --git a/dev/result/ai-searchbox/services/aitoolService.js b/dev/result/ai-searchbox/services/aitoolService.js
+deleted file mode 100644
+--- a/dev/result/ai-searchbox/services/aitoolService.js
++++ /dev/null
+@@ -1,123 +1,0 @@
+-class AIToolService {
+-  static API_PREFIX = {
+-    images: "https://image.so.com", // 绘图
+-    ppt: "https://aippt.360.com", // PPT
+-    write: "https://wenku.so.com/xie", // 写作
+-    translate: "https://fanyi.so.com", // 翻译
+-    aitools: "https://ai.so.com/search", // 问AI
+-  };
+-
+-  static TOOL_LABELS = {
+-    images: "生图",
+-    ppt: "做PPT",
+-    write: "写作",
+-    translate: "翻译",
+-    aitools: "问AI",
+-  };
+-
+-  constructor() {
+-    this.imagesBaseUrl = AIToolService.API_PREFIX.images;
+-    this.pptBaseUrl = AIToolService.API_PREFIX.ppt;
+-    this.writeBaseUrl = AIToolService.API_PREFIX.write;
+-    this.translateBaseUrl = AIToolService.API_PREFIX.translate;
+-    this.aitoolsBaseUrl = AIToolService.API_PREFIX.aitools;
+-  }
+-
+-  // 构建URL
+-  buildUrl({ query = "", type = "", params = {} }) {
+-    switch (type) {
+-      case "images":
+-        return this.buildImagesUrl(query, params);
+-      case "translate":
+-        return this.buildTranslateUrl(query, params);
+-      case "write":
+-        return this.buildWriteUrl(query, params);
+-      case "ppt":
+-        return this.buildPptUrl(query, params);
+-      case "aitools":
+-        return this.buildAitoolsUrl(query, params);
+-      default:
+-        return null;
+-    }
+-  }
+-
+-  // 构建绘图URL
+-  buildImagesUrl(query, params = {}) {
+-    params.q = query;
+-    const url = new URL(this.imagesBaseUrl);
+-    url.pathname = '/ai/generate';
+-    url.search = new URLSearchParams(params).toString();
+-    return url.toString();
+-  }
+-
+-  // 构建翻译URL
+-  buildTranslateUrl(query, params = {}) {
+-    params.type = 'auto';
+-    const url = new URL(this.translateBaseUrl);
+-    url.pathname = '/';
+-    url.search = new URLSearchParams(params).toString();
+-    url.hash = encodeURIComponent(query);
+-    return url.toString();
+-  }
+-
+-  // 构建写作URL
+-  buildWriteUrl(query, params = {}) {
+-    params.q = query;
+-    params.genreId = "3213814635296a7ffa33906dc1c197c6";
+-    const url = new URL(this.writeBaseUrl);
+-    url.pathname = '/';
+-    url.search = new URLSearchParams(params).toString();
+-    return url.toString();
+-  }
+-
+-  // 构建PPT URL
+-  buildPptUrl(query, params = {}) {
+-    params.opage = params.page || "middle";
+-    params.page = "generate";
+-    params.mod = 'phrase';
+-    params.title = query;
+-    const url = new URL(this.pptBaseUrl);
+-    url.pathname = '/aippt';
+-    url.search = new URLSearchParams(params).toString();
+-    return url.toString();
+-  }
+-
+-  // 构建问AI URL
+-  buildAitoolsUrl(query, params = {}) {
+-    params.search = query;
+-    const url = new URL(this.aitoolsBaseUrl);
+-    url.search = new URLSearchParams(params).toString();
+-    return url.toString();
+-  }
+-
+-  // 统一提交入口
+-  submit({ query = "", type = "", params = {} }) {
+-    if (!query || !query.trim()) {
+-      const url = new URL(AIToolService.API_PREFIX[type]);
+-      url.search = new URLSearchParams(params).toString();
+-      return url.toString();
+-    }
+-
+-    return this.buildUrl({ query, type, params });
+-  }
+-
+-  // 打开新标签页
+-  openInNewTab(url) {
+-    if (url) {
+-      window.open(url, "_blank");
+-    }
+-  }
+-
+-  // 提交并打开新标签页
+-  submitAndOpen({ query = "", type = "", params = {} }) {
+-    const url = this.submit({ query, type, params });
+-    if (url) {
+-      this.openInNewTab(url);
+-    }
+-  }
+-}
+-
+-export default AIToolService;
+-
+-const aitoolService = new AIToolService();
+-export { aitoolService };
+diff --git a/dev/result/ai-searchbox/services/suggestService.js b/dev/result/ai-searchbox/services/suggestService.js
+--- a/dev/result/ai-searchbox/services/suggestService.js
++++ b/dev/result/ai-searchbox/services/suggestService.js
+@@ -105,6 +105,8 @@
+           pq: this.getUserPq(),
+           cursrc: this.getUserCursrc(),
+           llbq: this.getUserLlbq(),
++          superSug: 1,
++
+ 
+           firstsame: firstsame
+         });
+@@ -299,7 +301,6 @@
+           needPreLoad: item.needPreLoad || "0",
+           type: item.t === "his" ? "history" : "personal",
+           id: item.id || "",
+-          aitool: item.aitool || "",
+         });
+       });
+     }
+@@ -393,7 +394,6 @@
+               ? "entity"
+               : item.type || "personal",
+           id: item.id || "",
+-          aitool: item.aitool || "",
+           firstsame: firstsame && index === 0,
+           entity: parsedEntity,
+         };

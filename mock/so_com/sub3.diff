@@ -1,0 +1,322 @@
+diff --git a/dev/result/ai-searchbox/components/suggest/suggest.vue b/dev/result/ai-searchbox/components/suggest/suggest.vue
+--- a/dev/result/ai-searchbox/components/suggest/suggest.vue
++++ b/dev/result/ai-searchbox/components/suggest/suggest.vue
+@@ -39,7 +39,7 @@
+             { 'firstsame-suggest': suggestion.firstsame },
+             { 'entity-suggest': suggestion.type === 'entity' && props.isSuperVersion },
+           ]"
+-          @click="handleSuggestionClick({ suggestion, value: index + 1 })"
++          @click="handleSuggestionClick(suggestion, index)"
+           @mouseenter="handleListMouseEnter(index)"
+         >
+           <span class="ai-suggest-item-content">
+@@ -49,6 +49,7 @@
+                 class="ai-suggest-item-entity-image"
+                 :src="suggestion.entity.image"
+                 :alt="suggestion.word || ''"
++                @load="handleEntityListImageLoad(suggestion, index)"
+               />
+               <span class="ai-suggest-item-entity-meta">
+                 <span class="ai-suggest-item-entity-word">
+@@ -82,9 +83,8 @@
+                 v-if="suggestion.face"
+                 class="ai-suggest-item-face"
+                 :src="suggestion.face"
+-                alt=""
++                @load="handleFaceDisp(suggestion, index)"
+               />
+-              <AIToolTag v-if="suggestion.aitool" :type="suggestion.aitool" />
+             </template>
+           </span>
+ 
+@@ -150,7 +150,7 @@
+         >
+       </div>
+       <div v-else class="ai-suggest-feedback">
+-        <span class="ai-suggest-feedback-text" @click="handleEdit">{{
++        <span class="ai-suggest-feedback-text" @click="$emit('edit')">{{
+           props.isEdit ? "取消" : "反馈"
+         }}</span>
+       </div>
+@@ -160,7 +160,6 @@
+ </template>
+ 
+ <script setup>
+-import AIToolTag from "./components/AIToolTag.vue";
+ import { computed, watch, ref, onUnmounted, nextTick } from "vue";
+ import { logService } from "../../services/logService.js";
+ import BaseIcon from "../icons/BaseIcon.vue";
+@@ -168,6 +167,7 @@
+ 
+ const ENTITY_CARD_CHANGE_THRESHOLD = 300; // 实体卡片切换防抖（ms）
+ let entityCardChangeTimeout = null;
++const pendingLogs = [];
+ 
+ const props = defineProps({
+   suggestData: {
+@@ -285,6 +285,13 @@
+   const selectedSuggestion = suggestions[entityCardChangeIndex.value];
+ 
+   if (isEntityCardSuggestion(selectedSuggestion)) {
++    if (props.isExpanded) {
++      logPreviewPanelShow(selectedSuggestion);
++    } else {
++      pendingLogs.push(() => {
++        logPreviewPanelShow(selectedSuggestion);
++      });
++    }
+     return selectedSuggestion;
+   }
+ 
+@@ -355,8 +362,8 @@
+   clearEntityCardChangeTimeout();
+ });
+ 
+-const handleSuggestionClick = ({ suggestion, value }) => {
+-  logSugClick({ suggestion, value });
++const handleSuggestionClick = (suggestion, index) => {
++  logSugClick(suggestion, index);
+   emit("suggest-submit", suggestion);
+ };
+ 
+@@ -422,13 +429,10 @@
+   emit("delete-all-history");
+ };
+ 
+-const handleEdit = () => {
+-  emit("edit");
+-};
+-
+ const handlePreviewClick = () => {
+   const suggestion = selectedEntitySuggestion.value;
+   if (!suggestion) return;
++  logPreviewPanelClick(suggestion);
+   emit("preview-click", suggestion);
+ };
+ 
+@@ -450,53 +454,100 @@
+   return escapedWord;
+ };
+ 
+-// Sug列表曝光打点
+-const logSugDisp = (suggestions) => {
+-  if (!suggestions?.length) return;
+-
+-  suggestions.forEach((item, index) => {
+-    if (item.face) {
+-      logService.log({
+-        mod: "sug-hot-icon",
+-        type: "moni-show",
+-        value: index + 1,
+-        p1: item.word,
+-      });
+-    }
++const handleEntityListImageLoad = (suggestion, index) => {
++  if (!props.isSuperVersion) return;
++  
++  if (
++    !suggestion ||
++    suggestion.type !== "entity" ||
++    !suggestion.entity?.image
++  ) {
++    return;
++  }
+ 
+-    if (item.aitool) {
+-      logService.log({
+-        mod: "ai-tool",
+-        type: "show",
+-        value: item.aitool,
+-        p1: item.word,
+-        p2: index + 1,
+-      });
+-    }
+-  });
++  logSugDisp(suggestion, index);
+ };
+ 
+-watch(
+-  () => props.suggestData.suggestions,
+-  (newVal) => {
+-    if (newVal?.length) {
+-      logSugDisp(newVal);
+-    }
+-  }
+-);
++const handleFaceDisp = (suggestion, index) => {
++  if (!suggestion || !suggestion?.face) return;
++
++  logSugDisp(suggestion, index);
++};
+ 
+ // Sug列表点击打点
+-const logSugClick = ({ suggestion, value }) => {
++const logSugClick = (suggestion, index) => {
+   if (!suggestion?.word) return;
+ 
+   // 带热icon的点击打点
+   if (suggestion.face) {
+-    logService.log({
+-      mod: "sug-hot-icon",
+-      type: "click",
+-      value: value,
++    logService.suggest.click({
++      type: "face-click",
++      value: index + 1,
++      p1: suggestion.word,
++    });
++  }
++
++  // entity 点击打点
++  if (suggestion.type === "entity") {
++    logService.suggest.log({
++      type: "entity-click",
++      value: index + 1,
+       p1: suggestion.word,
+     });
+   }
+ };
++
++// Sug列表曝光打点
++const logSugDisp = (suggestion, index) => {
++  if (!suggestion?.word) return;
++
++  // 带热icon的曝光打点
++  if (suggestion.face) {
++    pendingLogs.push(() => {
++      logService.suggest.log({
++        type: "face-show",
++        value: index + 1,
++        p1: suggestion.word,
++      });
++    });
++  }
++
++  // entity 曝光打点
++  if (suggestion.type === "entity") {
++    pendingLogs.push(() => {
++      logService.suggest.log({
++        type: "entity-show",
++        value: index + 1,
++        p1: suggestion.word,
++      });
++    });
++  }
++
++  if (pendingLogs.length > 0 && props.isExpanded) {
++    pendingLogs.forEach((log) => log());
++    pendingLogs.length = 0;
++  }
++};
++
++watch(() => props.isExpanded, (newVal) => {
++  if (newVal) {
++    pendingLogs.forEach((log) => log());
++    pendingLogs.length = 0;
++  }
++}, { immediate: true });
++
++// 右侧preview panel 打点
++const logPreviewPanelClick = (suggestion) => {
++  logService.preview.click({
++    type: "preview-click",
++    p1: suggestion.word,
++  });
++};
++
++const logPreviewPanelShow = (suggestion) => {
++  logService.preview.show({
++    type: "preview-show",
++    p1: suggestion.word,
++  });
++};
+ </script>
+diff --git a/dev/result/ai-searchbox/services/logService.js b/dev/result/ai-searchbox/services/logService.js
+--- a/dev/result/ai-searchbox/services/logService.js
++++ b/dev/result/ai-searchbox/services/logService.js
+@@ -1,30 +1,71 @@
+ class LogService {
+-  /**
+-   * 推荐接口打点模块名
+-   * 1. suggest-log
+-   * 2. sug-hot-icon
+-   */
+   static MODULE_NAME = {
+     SUGGEST_LOG: 'suggest-log',
+-    SUG_HOT_ICON: 'sug-hot-icon',
++    PLACEHOLDER: 'placeholder',
++    RICH_PREVIEW: 'rich-preview',
++  };
++
++  /**
++   * 常用模块别名，供外部使用：
++   */
++  static MODULE_ALIAS = {
++    placeholder: LogService.MODULE_NAME.PLACEHOLDER,
++    suggest: LogService.MODULE_NAME.SUGGEST_LOG,
++    preview: LogService.MODULE_NAME.RICH_PREVIEW,
++  };
++
++  static LOG_TYPE = {
++    CLICK: 'click',
++    SHOW: 'disp',
+   };
+ 
+   constructor() {
+     this.log = this.log.bind(this);
++    this.createModuleLogger = this.createModuleLogger.bind(this);
++    this.getModule = this.getModule.bind(this);
++
++    Object.entries(LogService.MODULE_ALIAS).forEach(([alias, mod]) => {
++      this[alias] = this.createModuleLogger(mod);
++    });
+   }
+ 
+-  /**
+-   * 通用打点方法
+-   * @param {String} mod 模块名
+-   * @param {Object} args Key/Value对的打点参数，通过 type 字段区分点击(click)/曝光(disp)等
+-   * @param {String} gifPath gif路径，默认为 'so/click'
+-   * @param {String} fullpath 完整路径
+-   */
++  // 通用打点方法
+   log({ mod, ...args }, gifPath = 'so/click', fullpath = '') {
+-    if (So && So.lib && So.lib.log) {
++    if (typeof So !== 'undefined' && So.lib && So.lib.log) {
+       So.lib.log(mod, args, gifPath, fullpath);
+     }
+   }
++
++  /**
++   * 创建模块级打点方法：
++   * click -> type: click
++   * show -> type: disp
++   */
++  createModuleLogger(mod) {
++    return {
++      click: (args = {}, gifPath = 'so/click', fullpath = '') => this.log({
++        mod,
++        type: LogService.LOG_TYPE.CLICK,
++        ...args,
++      }, gifPath, fullpath),
++      show: (args = {}, gifPath = 'so/click', fullpath = '') => this.log({
++        mod,
++        type: LogService.LOG_TYPE.SHOW,
++        ...args,
++      }, gifPath, fullpath),
++      log: (args = {}, gifPath = 'so/click', fullpath = '') => this.log({
++        mod,
++        ...args,
++      }, gifPath, fullpath),
++    };
++  }
++
++  /**
++   * 获取任意模块打点器，便于未预置模块快速接入
++   */
++  getModule(mod) {
++    return this.createModuleLogger(mod);
++  }
+ }
+ 
+ export default LogService;

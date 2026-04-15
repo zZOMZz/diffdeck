@@ -1,0 +1,22 @@
+[
+  {
+    "index": 0,
+    "description": "Simplify PHP related-search and middle recommendation rendering",
+    "draftComments": []
+  },
+  {
+    "index": 1,
+    "description": "Remove AI-tool submission flow from the AI searchbox",
+    "draftComments": []
+  },
+  {
+    "index": 2,
+    "description": "Add structured suggestion, placeholder, and preview logging",
+    "draftComments": []
+  },
+  {
+    "index": 3,
+    "description": "Clean up recommendation styles and inline recommendation experiments",
+    "draftComments": []
+  }
+]

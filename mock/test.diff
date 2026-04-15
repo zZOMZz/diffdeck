@@ -1,0 +1,1020 @@
+## application/library/PlatInfoConfig.php
+  [0] - L194:             'uiExclude' => 'side|pagination|feedback|rec-top|res-list',
+  [1] + L194:             'uiExclude' => 'side|pagination|feedback',
+
+## application/models/PlatInfo.php
+  [2] + L318:             if (!is_array($obExtArr)) {
+  [3] + L319:                 $obExtArr = [];
+  [4] + L320:             }
+  [5] + L321:             $filterObType = (string)($obExtArr['filter_ob_type'] ?? '');
+  [6] + L322:             $filterObTypeList = array_filter(array_map('trim', explode('|', $filterObType)));
+  [7] - L319:                 is_array($obExtArr)
+  [8] - L320:                 && intval($obExtArr['is_middle_page'] ?? 0) === 1
+  [9] - L321:                 && ($obExtArr['filter_ob_type'] ?? '') === 'softbox_middle_new'
+  [10] + L324:                 intval($obExtArr['is_middle_page'] ?? 0) === 1
+  [11] + L325:                 && in_array('softbox_middle_new', $filterObTypeList, true)
+
+## application/models/SearchCount.php
+  [12] - L26:         return $this->isInAbTest() || $this->is_extend_query;
+  [13] - L27:     }
+  [14] - L28: 
+  [15] - L29:     // 判断是否命中 A/B 实验
+  [16] - L30:     private function isInAbTest(): bool {
+  [17] - L31:         return AbvModel::check(5670, 'cpc_pos_1');
+  [18] + L26:         return $this->is_extend_query;
+
+## application/views/index/element/result.php
+  [19] - L170:     if(!AbvModel::check(5670, 'cpc_pos_1')) {
+  [20] - L171:         echo $render_relative;
+  [21] - L172:     }
+  [22] + L170:     echo $render_relative;
+
+## application/views/index/guide.php
+  [23] - L39:     if(AbvModel::check(5670, 'cpc_pos_1')) {
+  [24] - L40:         echo $render_relative;
+  [25] - L41:     }
+  [26] - L42: 
+
+## application/views/index/inc/relative.php
+  [27] - L73: 
+  [28] - L74: 		// 对照
+  [29] - L75: 		if(AbvModel::check(5670, 'cpc_pos_1')) {
+  [30] - L76: 			$col = 3;
+  [31] - L77: 			$total = 15;
+  [32] - L78: 		}
+  [33] - L79: 
+  [34] - L80: 		if(AbvModel::check(5835, 'cpc_rs3_3')) {
+  [35] - L81: 			$col = 2;
+  [36] - L82: 			$total = 12;
+  [37] - L83: 		}
+  [38] - L84: 	}
+  [39] - L85: 
+  [40] - L86: 	if(AbvModel::check(5835, 'cpc_rs3_2')) {
+  [41] - L87: 		$col = 2;
+  [42] - L88: 		$total = 12;
+  [43] - L89: 	}
+  [44] - L90: 
+  [45] - L91: 	// 用商联合实验-推荐，底部加一行
+  [46] - L92: 	$isLianhesy = AbvModel::check(5292, 'cpc_lianhesy_3') || AbvModel::check(5292, 'cpc_lianhesy_4') || AbvModel::check(5292, 'cpc_lianhesy_5') || AbvModel::check(5292, 'cpc_lianhesy_6');
+  [47] - L93: 	if ($isLianhesy) {
+  [48] - L94: 		$total += $col;
+  [49] - L132: 		$icon = $isLianhesy ? '<img src="' . HelperModel::getPicUrl('https://p4.ssl.qhimg.com/t110b9a93010affcfe7d9faa8e6.png', '/dml/28_28_') . '" alt="search-icon" width="16" height="16" class="relative-search-icon" loading="lazy">' : '';
+
+## application/views/index/inc/reslist.php
+  [50] - L7:     $middle_suggest_pos = 'middle';
+  [51] - L8:     $middle_ci_suggest_pos = '';
+  [52] - L9:     $origin_mid_sug = AbvModel::check(5670, 'cpc_pos_1') || (isset($_v_is_extend_result) && $_v_is_extend_result);
+  [53] + L7:     $middle_suggest_pos = 2;
+  [54] - L11:     $has_middle_rank = false;
+  [55] - L38:     $middleSuggestData = $_v_results['suggest']['data_middle'] ?? [];
+  [56] - L39:     $hasMiddleSuggestData = !empty($middleSuggestData);
+  [57] - L40: 
+  [58] - L41:     if ($origin_mid_sug) {
+  [59] - L42:         // 原推荐: 普通浏览器
+  [60] - L43:         $middle_suggest_pos = 4;
+  [61] - L44: 
+  [62] - L45:         // 原推荐位置: 360系浏览器
+  [63] - L46:         if ($hasMiddleSuggestData && isset($middleSuggestData['is_lm']) && (int)$middleSuggestData['is_lm'] === 1) {
+  [64] - L47:             $middle_suggest_pos = 3;
+  [65] - L48:         }
+  [66] - L49:     }
+  [67] - L50: 
+  [68] - L51:     // 中推排序实验, 优先级: 默认排序 < 动态排序 < 上移逻辑(onebox等)
+  [69] - L52:     if ($hasMiddleSuggestData && !AbvModel::check(6384, 'cpc_middle2_2')) {
+  [70] - L53:         $middle_suggest_pos = 1;
+  [71] - L54:         $has_middle_rank = true;    // 提高onebox中推上移优先级
+  [72] - L55:     }
+  [73] - L56: 
+  [74] - L57:     // 首条官网下方展示AI Rec
+  [75] - L58:     if (AbvModel::check(6377, 'cpc_airecom_3') && $_v_is_top_official) {
+  [76] - L59:         $middle_suggest_pos = 3;
+  [77] - L60:     }
+  [78] - L61: 
+  [79] - L106:                 if (AbvModel::check(5095, 'test')) {
+  [80] - L107:                     $html .= '<div id="ai-recommend-bottom" class="ai-recommend-bottom" data-disp-comm="ai-recommend-bottom"></div>';
+  [81] - L108:                 }
+  [82] - L133:         $showAibox = false;
+  [83] - L135:             if(isset($item['type']) && in_array($item['type'], $defaultTopArray) && $index <= 2 && ($middle_suggest_pos === 'middle' || (($origin_mid_sug || $has_middle_rank) && !$is_middle_recommended))) {
+  [84] - L136:                 // 命中上移逻辑 互斥掉。 即llm_recommend_onebox_type为空 或 llm_recommend_onebox_type不为空，并且类型不等于需要上移的类型，才可以做上移。
+  [85] - L137:                 if(empty($_v_results['llm_recommend_onebox_type']) || (!empty($_v_results['llm_recommend_onebox_type']) && $_v_results['llm_recommend_onebox_type'] !== $item['type']) ){
+  [86] - L138:                     $middle_suggest_pos = $index;
+  [87] - L139:             }
+  [88] - L140:             }
+  [89] - L141:            
+  [90] - L142:             // aibox情况下
+  [91] - L143:             if (isset($item['type']) && $item['type'] == '360shoutiao_AI' && !empty($_v_results['suggest']['data_aibox'])){
+  [92] - L144:                 $showAibox = true;
+  [93] - L145:                 $middle_ci_suggest_pos = 2;
+  [94] - L146:                 $middle_suggest_pos = $index;
+  [95] + L104:             // 命中首条默认类型时，中推提升到第一条下方。
+  [96] + L105:             if ($pos === 1 && isset($item['type']) && in_array($item['type'], $defaultTopArray)) {
+  [97] + L106:                 $middle_suggest_pos = $pos;
+  [98] - L226:         if($showAibox && PlatInfoModel::isModuleAllowedForRendering('rec-middle') && PlatInfoModel::isModuleAllowedForRendering('recommend') && $_v_pn <= 5 && !empty($_v_results['suggest']) && !empty($_v_results['suggest']['data_aibox']) 
+  [99] - L227:             && !empty($_v_results['suggest']['data_aibox']['list']) && !in_array('relatedSearch', $_v_risk_management_list) && count($_v_results['suggest']['data_aibox']['list']) > 2 && (empty($_v_sug_hide_conf) || empty($_v_sug_hide_conf['sug_middle']))){
+  [100] - L228:             if(($middle_suggest_pos !== 'middle' && $index === $middle_suggest_pos)){
+  [101] - L229:                 $suggest_middle = $this->render(APPLICATION_PATH . "/application/views/index/inc/suggest_middle.php", array(
+  [102] - L230:                        'data' => $_v_results['suggest'],
+  [103] - L231:                        'fr' => $_v_fr,
+  [104] - L232:                        'sid' => @$_v_results['sid'],
+  [105] - L233:                        'site_rg' => $_v_site_rg,
+  [106] - L234:                        'site_site' => $_v_site_site,
+  [107] - L235:                        'site_inurl' => $_v_site_inurl,
+  [108] - L236:                        'abv' => $_v_abv,
+  [109] - L237:                        'ls' => $_v_ls,
+  [110] - L238:                        'lmsid' => $_v_lmsid,
+  [111] - L239:                        'lm_extend' => $_v_lm_extend,
+  [112] - L240:                        'className' => $className,//$className 传className是为结果折叠使用，例如信息流折叠，电话折叠，风险折叠,
+  [113] - L241:                        'showLess' => true,
+  [114] - L242:                        'src' => 'related_middle_aibox',
+  [115] - L243:                        'suggest_pos' => $middle_suggest_pos,
+  [116] - L244:                        'aibox' => true,
+  [117] - L245:                        'rank' => $index
+  [118] - L246:                    ));
+  [119] - L247:                $html .= $suggest_middle;
+  [120] - L248:             }
+  [121] - L249:         }else if(PlatInfoModel::isModuleAllowedForRendering('rec-middle') && !$is_middle_recommended &&PlatInfoModel::isModuleAllowedForRendering('recommend') && $_v_pn <= 5 && !empty($_v_results['suggest']) && !empty($_v_results['suggest']['data_middle']) 
+  [122] - L250:             && isset($_v_results['suggest']['data_middle']['is_lm']) && in_array($_v_results['suggest']['data_middle']['is_lm'], [0,1])
+  [123] - L251:             && !empty($_v_results['suggest']['data_middle']['list']) && !in_array('relatedSearch', $_v_risk_management_list) && (empty($_v_sug_hide_conf) || empty($_v_sug_hide_conf['sug_middle']))){
+  [124] - L252:             if($_v_results['suggest']['data_middle']['is_lm'] == 0 && (($middle_suggest_pos === 'middle' && $index === 2) || ($middle_suggest_pos !== 'middle' && $index === $middle_suggest_pos))){ 
+  [125] + L186:         $middleSuggestData = $_v_results['suggest']['data_middle'] ?? [];
+  [126] + L187:         $canRenderMiddleSuggest = PlatInfoModel::isModuleAllowedForRendering('rec-middle')
+  [127] + L188:             && PlatInfoModel::isModuleAllowedForRendering('recommend')
+  [128] + L189:             && $_v_pn <= 5
+  [129] + L190:             && !empty($_v_results['suggest'])
+  [130] + L191:             && !empty($middleSuggestData)
+  [131] + L192:             && !empty($middleSuggestData['list'])
+  [132] + L193:             && !in_array('relatedSearch', $_v_risk_management_list)
+  [133] + L194:             && (empty($_v_sug_hide_conf) || empty($_v_sug_hide_conf['sug_middle']));
+  [134] + L195:         $shouldRenderMiddleSuggest = !$is_middle_recommended
+  [135] + L196:             && $canRenderMiddleSuggest
+  [136] + L197:             && $pos === $middle_suggest_pos;
+  [137] + L198: 
+  [138] + L199:         if($shouldRenderMiddleSuggest){ 
+  [139] - L265:                     'showLess' => !$origin_mid_sug && $index === 2 ? false : true,
+  [140] - L266:                     'src' => $_v_results['suggest']['data_middle']['src'],
+  [141] - L267:                     'suggest_pos' => $middle_suggest_pos,
+  [142] - L268:                     'rank' => $index
+  [143] - L269:                 ));
+  [144] - L270:                 $is_middle_recommended = true;
+  [145] - L271:                 $html .= $suggest_middle;
+  [146] - L272:             }else if($_v_results['suggest']['data_middle']['is_lm'] == 1 && !$is_middle_recommended &&(($middle_suggest_pos === 'middle' && $index === 2) || ($middle_suggest_pos !== 'middle' && $index === $middle_suggest_pos))){ 
+  [147] - L273:                 $suggest_middle = $this->render(APPLICATION_PATH . "/application/views/index/inc/suggest_middle.php", array(
+  [148] - L274:                     'data' => $_v_results['suggest'],
+  [149] - L275:                     'fr' => $_v_fr,
+  [150] - L276:                     'sid' => @$_v_results['sid'],
+  [151] - L277:                     'site_rg' => $_v_site_rg,
+  [152] - L278:                     'site_site' => $_v_site_site,
+  [153] - L279:                     'site_inurl' => $_v_site_inurl,
+  [154] - L280:                     'abv' => $_v_abv,
+  [155] - L281:                     'ls' => $_v_ls,
+  [156] - L282:                     'lmsid' => $_v_lmsid,
+  [157] - L283:                     'lm_extend' => $_v_lm_extend,
+  [158] - L284:                     'className' => $className,//$className 传className是为结果折叠使用，例如信息流折叠，电话折叠，风险折叠
+  [159] - L285:                     'src' => $_v_results['suggest']['data_middle']['src'],
+  [160] - L286:                     'suggest_pos' => $middle_suggest_pos,
+  [161] + L212:                     'src' => $middleSuggestData['src'],
+  [162] + L213:                     'move_to_top' => $middle_suggest_pos === 1 ? true : false,
+  [163] - L289: 
+  [164] - L292:             }
+
+## application/views/index/inc/suggest_middle.php
+  [165] - L4:     $is_inc = !empty($data['data_middle']['is_inc']) && AbvModel::check(5730, 'test') ? $data['data_middle']['is_inc'] : 0;
+  [166] - L58:     $html .= '<div class="res-recommend-tag g-clearfix' . (!empty($showLess) && !$is_inc ? ' show-less' : '') . ' ' .$style .'" data-logmod="related_middle" data-type="' . ($suggest_pos === 'middle' ? 'middle' : 'middle2top') . '" data-disp="related_middle" data-ext="' . $ext . '" data-version="' . $version . '" data-ci="' . (!empty($rec_ci) && $rec_ci ? true : false) . '" data-rank="' .($rank + 1). '">';
+  [167] + L57:     $html .= '<div class="res-recommend-tag g-clearfix ' .$style .'" data-logmod="related_middle" data-type="' . ($move_to_top ? 'middle2top' : 'middle') . '" data-disp="related_middle" data-ext="' . $ext . '" data-version="' . $version . '" data-ci="' . (!empty($rec_ci) && $rec_ci ? true : false) . '" data-rank="' .($rank + 1). '">';
+
+## application/views/index/inc/top_rec.php
+  [168] - L48: 	<dd class="so-pdr-bd <?php echo (AbvModel::check(5730,'test') && !empty($data['data_top']['is_inc']) && $data['data_top']['is_inc'] == 1) ? ' become-two-line' : ''; ?>">
+  [169] + L48: 	<dd class="so-pdr-bd <?php echo (!empty($data['data_top']['is_inc']) && $data['data_top']['is_inc'] == 1) ? ' become-two-line' : ''; ?>">
+
+## application/views/index/index.php
+  [170] - L328:     <?php
+  [171] - L329:         if(AbvModel::check(5670, 'cpc_pos_1')) {
+  [172] - L330:             echo $render_relative;
+  [173] - L331:         }
+  [174] - L332:     ?>
+
+## application/views/index/plat.php
+  [175] - L279:     <?php
+  [176] - L280:     if(AbvModel::check(5670, 'cpc_pos_1')) {
+  [177] - L281:         echo $render_relative;
+  [178] - L282:     }
+  [179] - L283:     ?>
+
+## dev/result/ai-searchbox/App.vue
+  [180] - L6:     :current-aitool="currentAITool"
+  [181] - L18:     @submit-aitool="handleAIToolSubmit"
+  [182] - L47: import { aitoolService } from "./services/aitoolService.js";
+  [183] - L74:   RICH_SUGGEST: "srp_suggst_right_nlp", // 富Suggest提交
+  [184] + L71:   RICH_SUGGEST: "srp_suggest_right_nlp", // 右侧card preview提交
+  [185] + L72:   ENTITY_SUGGEST: "srp_suggest_entity", // sugList中 card Suggest提交
+  [186] - L106: const currentAITool = ref(null); // 当前关联的AI工具
+  [187] - L180:   logService.log({
+  [188] - L181:     mod: "placeholder",
+  [189] - L182:     type: "show",
+  [190] - L183:   });
+  [191] - L184: 
+  [192] - L199:   currentAITool.value = null;
+  [193] - L206: // ai工具提交打点
+  [194] - L207: const logAIToolSubmit = ({ word, aitool, type }) => {
+  [195] - L208:   logService.log({
+  [196] - L209:     mod: "ai-tool",
+  [197] - L210:     type: type,
+  [198] - L211:     value: aitool,
+  [199] - L212:     p1: word,
+  [200] - L213:   });
+  [201] - L214: };
+  [202] - L215: 
+  [203] - L216: // submit提交打点
+  [204] - L217: const logSubmit = ({ type }) => {
+  [205] - L218:   logService.log({
+  [206] - L219:     mod: "s_act",
+  [207] - L220:     type: "click",
+  [208] - L221:     p1: type,
+  [209] - L222:   });
+  [210] - L223: };
+  [211] - L224: 
+  [212] + L239:       logService.placeholder.show();
+  [213] - L323:     currentAITool.value = selectedSuggestion.aitool || null;
+  [214] + L301:       case "entity":
+  [215] + L302:         submitType.value = SUBMIT_TYPE.ENTITY_SUGGEST;
+  [216] + L303:         break;
+  [217] - L336:     currentAITool.value = null;
+  [218] - L360:   // 打点
+  [219] - L361:   const logParams = {
+  [220] + L334:   logService.suggest.log({
+  [221] - L363:     mod: "suggest-log",
+  [222] - L364:   };
+  [223] - L365:   logService.log(logParams);
+  [224] + L336:   });
+  [225] - L382:       currentAITool.value = null;
+  [226] - L401: // 处理AI工具提交
+  [227] - L402: const handleAIToolSubmit = ({ type }) => {
+  [228] - L403:   const submitText = searchText.value.trim();
+  [229] - L404:   logAIToolSubmit({ word: submitText, aitool: type, type: "click" });
+  [230] - L405:   aitoolService.submitAndOpen({ query: submitText, type: type, params: { src: "so_result_search", srcg: "so_result_search" } });
+  [231] - L406: };
+  [232] - L407: 
+  [233] - L409: const handleSubmit = ({ type }) => {
+  [234] + L372: const handleSubmit = () => {
+  [235] - L424:   if (type) {
+  [236] - L425:     logSubmit({ type });
+  [237] - L426:   }
+  [238] - L427: 
+  [239] - L428:   // 执行提交
+  [240] - L429:   if (currentAITool.value) {
+  [241] - L430:     logAIToolSubmit({
+  [242] - L431:       word: submitWord,
+  [243] - L432:       aitool: currentAITool.value,
+  [244] - L433:       type: "suggest",
+  [245] - L434:     });
+  [246] - L435:     aitoolService.submitAndOpen({ query: submitWord, type: currentAITool.value, params: { src: "reg-sug-ai-nav", srcg: "so" } });
+  [247] - L436:   } else {
+  [248] - L437:     submitService.submitForm(submitWord, {
+  [249] - L438:       src: submitType.value,
+  [250] - L439:       ...submitParams.value,
+  [251] - L440:     });
+  [252] - L441:     handleClose();
+  [253] - L442:   }
+  [254] + L387:   submitService.submitForm(submitWord, {
+  [255] + L388:     src: submitType.value,
+  [256] + L389:     ...submitParams.value,
+  [257] + L390:   });
+  [258] + L391:   handleClose();
+  [259] - L446:   currentAITool.value = null;
+  [260] - L461:   currentAITool.value = suggestion.aitool || null;
+  [261] - L468:       submitType.value = SUBMIT_TYPE.SUGGEST;
+  [262] + L415:       submitType.value = SUBMIT_TYPE.ENTITY_SUGGEST;
+  [263] - L476:   handleSubmit({ type: "sug" });
+  [264] + L423:   handleSubmit();
+  [265] - L484:   handleSubmit({ type: "rich_sug" });
+  [266] + L431:   handleSubmit();
+  [267] - L502:   // 输入框为空时, palceholder曝光打点
+  [268] - L503:   if (!text.trim()) {
+  [269] - L504:     logService.log({
+  [270] - L505:       mod: "placeholder",
+  [271] - L506:       type: "show",
+  [272] - L507:     });
+  [273] - L508:   }
+  [274] - L509:   
+  [275] - L512:   currentAITool.value = null; // 清除 AI 工具标记
+  [276] - L541:     currentAITool.value = null;
+  [277] - L551:   currentAITool.value = null;
+
+## dev/result/ai-searchbox/components/icons/AiToolsIcon.vue
+  [278] - L1: <template>
+  [279] - L2:   <svg
+  [280] - L3:     xmlns="http://www.w3.org/2000/svg"
+  [281] - L4:     width="16"
+  [282] - L5:     height="16"
+  [283] - L6:     viewBox="0 0 16 16"
+  [284] - L7:     fill="none"
+  [285] - L8:   >
+  [286] - L9:     <g clip-path="url(#clip0_7703_9585)">
+  [287] - L10:       <g filter="url(#filter0_ii_7703_9585)">
+  [288] - L11:         <path
+  [289] - L12:           d="M7.04449 0.991788C7.41582 0.090141 8.72624 0.198848 8.94391 1.14936L9.63504 4.1672C9.89612 5.3072 10.6682 6.26316 11.7277 6.75831L14.0037 7.82198C14.8447 8.21501 14.7429 9.44219 13.8487 9.69127L11.3243 10.3944C10.2573 10.6916 9.3733 11.4401 8.90432 12.4436L7.79488 14.8176C7.40185 15.6586 6.17468 15.5568 5.9256 14.6625L5.2225 12.1382C4.92529 11.0711 4.17674 10.1872 3.17323 9.71818L0.799263 8.60875C-0.041741 8.21571 0.0600583 6.98854 0.954329 6.73946L3.37452 6.06537C4.50115 5.75157 5.42019 4.93589 5.86554 3.8545L7.04449 0.991788Z"
+  [290] - L13:           fill="url(#paint0_linear_7703_9585)"
+  [291] - L14:         />
+  [292] - L15:       </g>
+  [293] - L16:       <g filter="url(#filter1_i_7703_9585)">
+  [294] - L17:         <path
+  [295] - L18:           d="M13.5813 0.185208C13.6672 -0.0215901 13.9678 0.00334735 14.0184 0.221473L14.3058 1.45907C14.362 1.70119 14.5268 1.90385 14.7523 2.00832L15.7266 2.45961C15.9214 2.54982 15.8978 2.8339 15.6909 2.89079L14.6332 3.1815C14.4063 3.24387 14.2179 3.40226 14.1176 3.61511L13.6513 4.604C13.5604 4.79673 13.2791 4.77339 13.2212 4.56832L12.9242 3.51611C12.8603 3.28963 12.7007 3.10238 12.4871 3.00347L11.4918 2.54246C11.2971 2.45225 11.3206 2.16816 11.5276 2.11127L12.5629 1.8267C12.8026 1.76082 12.9985 1.58808 13.0939 1.35853L13.5813 0.185208Z"
+  [296] - L19:           fill="#7FB0FF"
+  [297] - L20:         />
+  [298] - L21:       </g>
+  [299] - L22:       <path
+  [300] - L23:         d="M1.84942 11.8131C1.91127 11.6186 2.18648 11.6186 2.24833 11.8131L2.57549 12.8419C2.6439 13.057 2.80766 13.2285 3.01936 13.3069L3.86954 13.6215C4.05175 13.6889 4.05175 13.9466 3.86954 14.0141L2.99979 14.3359C2.79928 14.4101 2.64119 14.5682 2.567 14.7687L2.24516 15.6384C2.17774 15.8206 1.92001 15.8206 1.85259 15.6384L1.53075 14.7687C1.45656 14.5682 1.29847 14.4101 1.09796 14.3359L0.228213 14.0141C0.0459968 13.9466 0.0459969 13.6889 0.228213 13.6215L1.07839 13.3069C1.29009 13.2285 1.45385 13.057 1.52226 12.8419L1.84942 11.8131Z"
+  [301] - L24:         fill="#465CFF"
+  [302] - L25:       />
+  [303] - L26:     </g>
+  [304] - L27:     <defs>
+  [305] - L28:       <filter
+  [306] - L29:         id="filter0_ii_7703_9585"
+  [307] - L30:         x="-1.77734"
+  [308] - L31:         y="-0.627563"
+  [309] - L32:         width="16.3579"
+  [310] - L33:         height="17.022"
+  [311] - L34:         filterUnits="userSpaceOnUse"
+  [312] - L35:         color-interpolation-filters="sRGB"
+  [313] - L36:       >
+  [314] - L37:         <feFlood flood-opacity="0" result="BackgroundImageFix" />
+  [315] - L38:         <feBlend
+  [316] - L39:           mode="normal"
+  [317] - L40:           in="SourceGraphic"
+  [318] - L41:           in2="BackgroundImageFix"
+  [319] - L42:           result="shape"
+  [320] - L43:         />
+  [321] - L44:         <feColorMatrix
+  [322] - L45:           in="SourceAlpha"
+  [323] - L46:           type="matrix"
+  [324] - L47:           values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+  [325] - L48:           result="hardAlpha"
+  [326] - L49:         />
+  [327] - L50:         <feOffset dy="-1" />
+  [328] - L51:         <feGaussianBlur stdDeviation="1" />
+  [329] - L52:         <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1" />
+  [330] - L53:         <feColorMatrix
+  [331] - L54:           type="matrix"
+  [332] - L55:           values="0 0 0 0 0.769374 0 0 0 0 0.553627 0 0 0 0 1 0 0 0 0.3 0"
+  [333] - L56:         />
+  [334] - L57:         <feBlend
+  [335] - L58:           mode="normal"
+  [336] - L59:           in2="shape"
+  [337] - L60:           result="effect1_innerShadow_7703_9585"
+  [338] - L61:         />
+  [339] - L62:         <feColorMatrix
+  [340] - L63:           in="SourceAlpha"
+  [341] - L64:           type="matrix"
+  [342] - L65:           values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+  [343] - L66:           result="hardAlpha"
+  [344] - L67:         />
+  [345] - L68:         <feOffset dx="-3" dy="1" />
+  [346] - L69:         <feGaussianBlur stdDeviation="1" />
+  [347] - L70:         <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1" />
+  [348] - L71:         <feColorMatrix
+  [349] - L72:           type="matrix"
+  [350] - L73:           values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.5 0"
+  [351] - L74:         />
+  [352] - L75:         <feBlend
+  [353] - L76:           mode="normal"
+  [354] - L77:           in2="effect1_innerShadow_7703_9585"
+  [355] - L78:           result="effect2_innerShadow_7703_9585"
+  [356] - L79:         />
+  [357] - L80:       </filter>
+  [358] - L81:       <filter
+  [359] - L82:         id="filter1_i_7703_9585"
+  [360] - L83:         x="11.3584"
+  [361] - L84:         y="-0.0719771"
+  [362] - L85:         width="4.50195"
+  [363] - L86:         height="4.80818"
+  [364] - L87:         filterUnits="userSpaceOnUse"
+  [365] - L88:         color-interpolation-filters="sRGB"
+  [366] - L89:       >
+  [367] - L90:         <feFlood flood-opacity="0" result="BackgroundImageFix" />
+  [368] - L91:         <feBlend
+  [369] - L92:           mode="normal"
+  [370] - L93:           in="SourceGraphic"
+  [371] - L94:           in2="BackgroundImageFix"
+  [372] - L95:           result="shape"
+  [373] - L96:         />
+  [374] - L97:         <feColorMatrix
+  [375] - L98:           in="SourceAlpha"
+  [376] - L99:           type="matrix"
+  [377] - L100:           values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+  [378] - L101:           result="hardAlpha"
+  [379] - L102:         />
+  [380] - L103:         <feOffset dy="-0.11519" />
+  [381] - L104:         <feGaussianBlur stdDeviation="0.172785" />
+  [382] - L105:         <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1" />
+  [383] - L106:         <feColorMatrix
+  [384] - L107:           type="matrix"
+  [385] - L108:           values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.84 0"
+  [386] - L109:         />
+  [387] - L110:         <feBlend
+  [388] - L111:           mode="normal"
+  [389] - L112:           in2="shape"
+  [390] - L113:           result="effect1_innerShadow_7703_9585"
+  [391] - L114:         />
+  [392] - L115:       </filter>
+  [393] - L116:       <linearGradient
+  [394] - L117:         id="paint0_linear_7703_9585"
+  [395] - L118:         x1="10.0002"
+  [396] - L119:         y1="1.00012"
+  [397] - L120:         x2="7.02125"
+  [398] - L121:         y2="15.6064"
+  [399] - L122:         gradientUnits="userSpaceOnUse"
+  [400] - L123:       >
+  [401] - L124:         <stop stop-color="#008CF8" />
+  [402] - L125:         <stop offset="0.50122" stop-color="#3760F0" />
+  [403] - L126:         <stop offset="0.999443" stop-color="#5E00FF" />
+  [404] - L127:       </linearGradient>
+  [405] - L128:       <clipPath id="clip0_7703_9585">
+  [406] - L129:         <rect width="16" height="16" fill="white" />
+  [407] - L130:       </clipPath>
+  [408] - L131:     </defs>
+  [409] - L132:   </svg>
+  [410] - L133: </template>
+
+## dev/result/ai-searchbox/components/icons/BaseIcon.vue
+  [411] - L14: import AiToolsIcon from "./AiToolsIcon.vue";
+  [412] - L23:       ["write", "images", "ppt", "translate", "delete", "search", "star", "aitools", "history", "sugSearch"].includes(
+  [413] + L22:       ["write", "images", "ppt", "translate", "delete", "search", "star", "history", "sugSearch"].includes(
+  [414] - L37:   aitools: AiToolsIcon,
+
+## dev/result/ai-searchbox/components/input/components/input-actions.vue
+  [415] - L4:       <div v-for="tool in aiTools" :key="tool.type" class="left-item" @click="handleClick(tool.type)">
+  [416] + L4:       <!-- TODO: AITOOLS 相关按钮, 目前已经全部下线, 此部分代码保留, 后续如果有需要可以恢复 -->
+  [417] + L5:       <div v-for="tool in aiTools" :key="tool.type" class="left-item" @click="$emit('submit-aitool', { type: tool.type })">
+  [418] - L53: 
+  [419] - L54: 
+  [420] - L55: const handleClick = (type) => {
+  [421] - L56:   // 处理 AI 功能点击
+  [422] - L57:   emit("submit-aitool", {
+  [423] - L58:     type,
+  [424] - L59:   });
+  [425] - L60: };
+  [426] - L61: 
+
+## dev/result/ai-searchbox/components/input/input.vue
+  [427] - L23:       @submit-aitool="$emit('submit-aitool', $event)"
+  [428] - L42:   currentAitool: {
+  [429] - L43:     type: String,
+  [430] - L44:     default: null,
+  [431] - L45:   },
+  [432] - L68:   "submit-aitool",
+
+## dev/result/ai-searchbox/components/suggest/components/AIToolTag.vue
+  [433] - L1: <template>
+  [434] - L2:   <span class="ai-suggest-item-aitool">
+  [435] - L3:     用<BaseIcon name="star" class="ai-suggest-item-aitool-icon" />AI{{ toolLabel }}
+  [436] - L4:   </span>
+  [437] - L5: </template>
+  [438] - L6: 
+  [439] - L7: <script setup>
+  [440] - L8: import { computed } from "vue";
+  [441] - L9: import BaseIcon from "../../icons/BaseIcon.vue";
+  [442] - L10: import AIToolService from "../../../services/aitoolService.js";
+  [443] - L11: 
+  [444] - L12: const props = defineProps({
+  [445] - L13:   type: {
+  [446] - L14:     type: String,
+  [447] - L15:     required: true,
+  [448] - L16:     validator: (value) => ["images", "write", "ppt", "translate"].includes(value),
+  [449] - L17:   },
+  [450] - L18: });
+  [451] - L19: 
+  [452] - L20: const toolLabel = computed(() => {
+  [453] - L21:   return AIToolService.TOOL_LABELS[props.type] || "";
+  [454] - L22: });
+  [455] - L23: </script>
+  [456] - L24: 
+
+## dev/result/ai-searchbox/components/suggest/suggest.vue
+  [457] - L42:           @click="handleSuggestionClick({ suggestion, value: index + 1 })"
+  [458] + L42:           @click="handleSuggestionClick(suggestion, index)"
+  [459] + L52:                 @load="handleEntityListImageLoad(suggestion, index)"
+  [460] - L85:                 alt=""
+  [461] + L86:                 @load="handleFaceDisp(suggestion, index)"
+  [462] - L87:               <AIToolTag v-if="suggestion.aitool" :type="suggestion.aitool" />
+  [463] - L153:         <span class="ai-suggest-feedback-text" @click="handleEdit">{{
+  [464] + L153:         <span class="ai-suggest-feedback-text" @click="$emit('edit')">{{
+  [465] - L163: import AIToolTag from "./components/AIToolTag.vue";
+  [466] + L170: const pendingLogs = [];
+  [467] + L288:     if (props.isExpanded) {
+  [468] + L289:       logPreviewPanelShow(selectedSuggestion);
+  [469] + L290:     } else {
+  [470] + L291:       pendingLogs.push(() => {
+  [471] + L292:         logPreviewPanelShow(selectedSuggestion);
+  [472] + L293:       });
+  [473] + L294:     }
+  [474] - L358: const handleSuggestionClick = ({ suggestion, value }) => {
+  [475] - L359:   logSugClick({ suggestion, value });
+  [476] + L365: const handleSuggestionClick = (suggestion, index) => {
+  [477] + L366:   logSugClick(suggestion, index);
+  [478] - L425: const handleEdit = () => {
+  [479] - L426:   emit("edit");
+  [480] - L427: };
+  [481] - L428: 
+  [482] + L435:   logPreviewPanelClick(suggestion);
+  [483] - L453: // Sug列表曝光打点
+  [484] - L454: const logSugDisp = (suggestions) => {
+  [485] - L455:   if (!suggestions?.length) return;
+  [486] - L456: 
+  [487] - L457:   suggestions.forEach((item, index) => {
+  [488] - L458:     if (item.face) {
+  [489] - L459:       logService.log({
+  [490] - L460:         mod: "sug-hot-icon",
+  [491] - L461:         type: "moni-show",
+  [492] - L462:         value: index + 1,
+  [493] - L463:         p1: item.word,
+  [494] - L464:       });
+  [495] - L465:     }
+  [496] + L457: const handleEntityListImageLoad = (suggestion, index) => {
+  [497] + L458:   if (!props.isSuperVersion) return;
+  [498] + L459:   
+  [499] + L460:   if (
+  [500] + L461:     !suggestion ||
+  [501] + L462:     suggestion.type !== "entity" ||
+  [502] + L463:     !suggestion.entity?.image
+  [503] + L464:   ) {
+  [504] + L465:     return;
+  [505] + L466:   }
+  [506] - L467:     if (item.aitool) {
+  [507] - L468:       logService.log({
+  [508] - L469:         mod: "ai-tool",
+  [509] - L470:         type: "show",
+  [510] - L471:         value: item.aitool,
+  [511] - L472:         p1: item.word,
+  [512] - L473:         p2: index + 1,
+  [513] - L474:       });
+  [514] - L475:     }
+  [515] - L476:   });
+  [516] + L468:   logSugDisp(suggestion, index);
+  [517] - L479: watch(
+  [518] - L480:   () => props.suggestData.suggestions,
+  [519] - L481:   (newVal) => {
+  [520] - L482:     if (newVal?.length) {
+  [521] - L483:       logSugDisp(newVal);
+  [522] - L484:     }
+  [523] - L485:   }
+  [524] - L486: );
+  [525] + L471: const handleFaceDisp = (suggestion, index) => {
+  [526] + L472:   if (!suggestion || !suggestion?.face) return;
+  [527] + L473: 
+  [528] + L474:   logSugDisp(suggestion, index);
+  [529] + L475: };
+  [530] - L489: const logSugClick = ({ suggestion, value }) => {
+  [531] + L478: const logSugClick = (suggestion, index) => {
+  [532] - L494:     logService.log({
+  [533] - L495:       mod: "sug-hot-icon",
+  [534] - L496:       type: "click",
+  [535] - L497:       value: value,
+  [536] + L483:     logService.suggest.click({
+  [537] + L484:       type: "face-click",
+  [538] + L485:       value: index + 1,
+  [539] + L486:       p1: suggestion.word,
+  [540] + L487:     });
+  [541] + L488:   }
+  [542] + L489: 
+  [543] + L490:   // entity 点击打点
+  [544] + L491:   if (suggestion.type === "entity") {
+  [545] + L492:     logService.suggest.log({
+  [546] + L493:       type: "entity-click",
+  [547] + L494:       value: index + 1,
+  [548] + L499: 
+  [549] + L500: // Sug列表曝光打点
+  [550] + L501: const logSugDisp = (suggestion, index) => {
+  [551] + L502:   if (!suggestion?.word) return;
+  [552] + L503: 
+  [553] + L504:   // 带热icon的曝光打点
+  [554] + L505:   if (suggestion.face) {
+  [555] + L506:     pendingLogs.push(() => {
+  [556] + L507:       logService.suggest.log({
+  [557] + L508:         type: "face-show",
+  [558] + L509:         value: index + 1,
+  [559] + L510:         p1: suggestion.word,
+  [560] + L511:       });
+  [561] + L512:     });
+  [562] + L513:   }
+  [563] + L514: 
+  [564] + L515:   // entity 曝光打点
+  [565] + L516:   if (suggestion.type === "entity") {
+  [566] + L517:     pendingLogs.push(() => {
+  [567] + L518:       logService.suggest.log({
+  [568] + L519:         type: "entity-show",
+  [569] + L520:         value: index + 1,
+  [570] + L521:         p1: suggestion.word,
+  [571] + L522:       });
+  [572] + L523:     });
+  [573] + L524:   }
+  [574] + L525: 
+  [575] + L526:   if (pendingLogs.length > 0 && props.isExpanded) {
+  [576] + L527:     pendingLogs.forEach((log) => log());
+  [577] + L528:     pendingLogs.length = 0;
+  [578] + L529:   }
+  [579] + L530: };
+  [580] + L531: 
+  [581] + L532: watch(() => props.isExpanded, (newVal) => {
+  [582] + L533:   if (newVal) {
+  [583] + L534:     pendingLogs.forEach((log) => log());
+  [584] + L535:     pendingLogs.length = 0;
+  [585] + L536:   }
+  [586] + L537: }, { immediate: true });
+  [587] + L538: 
+  [588] + L539: // 右侧preview panel 打点
+  [589] + L540: const logPreviewPanelClick = (suggestion) => {
+  [590] + L541:   logService.preview.click({
+  [591] + L542:     type: "preview-click",
+  [592] + L543:     p1: suggestion.word,
+  [593] + L544:   });
+  [594] + L545: };
+  [595] + L546: 
+  [596] + L547: const logPreviewPanelShow = (suggestion) => {
+  [597] + L548:   logService.preview.show({
+  [598] + L549:     type: "preview-show",
+  [599] + L550:     p1: suggestion.word,
+  [600] + L551:   });
+  [601] + L552: };
+
+## dev/result/ai-searchbox/services/aitoolService.js
+  [602] - L1: class AIToolService {
+  [603] - L2:   static API_PREFIX = {
+  [604] - L3:     images: "https://image.so.com", // 绘图
+  [605] - L4:     ppt: "https://aippt.360.com", // PPT
+  [606] - L5:     write: "https://wenku.so.com/xie", // 写作
+  [607] - L6:     translate: "https://fanyi.so.com", // 翻译
+  [608] - L7:     aitools: "https://ai.so.com/search", // 问AI
+  [609] - L8:   };
+  [610] - L9: 
+  [611] - L10:   static TOOL_LABELS = {
+  [612] - L11:     images: "生图",
+  [613] - L12:     ppt: "做PPT",
+  [614] - L13:     write: "写作",
+  [615] - L14:     translate: "翻译",
+  [616] - L15:     aitools: "问AI",
+  [617] - L16:   };
+  [618] - L17: 
+  [619] - L18:   constructor() {
+  [620] - L19:     this.imagesBaseUrl = AIToolService.API_PREFIX.images;
+  [621] - L20:     this.pptBaseUrl = AIToolService.API_PREFIX.ppt;
+  [622] - L21:     this.writeBaseUrl = AIToolService.API_PREFIX.write;
+  [623] - L22:     this.translateBaseUrl = AIToolService.API_PREFIX.translate;
+  [624] - L23:     this.aitoolsBaseUrl = AIToolService.API_PREFIX.aitools;
+  [625] - L24:   }
+  [626] - L25: 
+  [627] - L26:   // 构建URL
+  [628] - L27:   buildUrl({ query = "", type = "", params = {} }) {
+  [629] - L28:     switch (type) {
+  [630] - L29:       case "images":
+  [631] - L30:         return this.buildImagesUrl(query, params);
+  [632] - L31:       case "translate":
+  [633] - L32:         return this.buildTranslateUrl(query, params);
+  [634] - L33:       case "write":
+  [635] - L34:         return this.buildWriteUrl(query, params);
+  [636] - L35:       case "ppt":
+  [637] - L36:         return this.buildPptUrl(query, params);
+  [638] - L37:       case "aitools":
+  [639] - L38:         return this.buildAitoolsUrl(query, params);
+  [640] - L39:       default:
+  [641] - L40:         return null;
+  [642] - L41:     }
+  [643] - L42:   }
+  [644] - L43: 
+  [645] - L44:   // 构建绘图URL
+  [646] - L45:   buildImagesUrl(query, params = {}) {
+  [647] - L46:     params.q = query;
+  [648] - L47:     const url = new URL(this.imagesBaseUrl);
+  [649] - L48:     url.pathname = '/ai/generate';
+  [650] - L49:     url.search = new URLSearchParams(params).toString();
+  [651] - L50:     return url.toString();
+  [652] - L51:   }
+  [653] - L52: 
+  [654] - L53:   // 构建翻译URL
+  [655] - L54:   buildTranslateUrl(query, params = {}) {
+  [656] - L55:     params.type = 'auto';
+  [657] - L56:     const url = new URL(this.translateBaseUrl);
+  [658] - L57:     url.pathname = '/';
+  [659] - L58:     url.search = new URLSearchParams(params).toString();
+  [660] - L59:     url.hash = encodeURIComponent(query);
+  [661] - L60:     return url.toString();
+  [662] - L61:   }
+  [663] - L62: 
+  [664] - L63:   // 构建写作URL
+  [665] - L64:   buildWriteUrl(query, params = {}) {
+  [666] - L65:     params.q = query;
+  [667] - L66:     params.genreId = "3213814635296a7ffa33906dc1c197c6";
+  [668] - L67:     const url = new URL(this.writeBaseUrl);
+  [669] - L68:     url.pathname = '/';
+  [670] - L69:     url.search = new URLSearchParams(params).toString();
+  [671] - L70:     return url.toString();
+  [672] - L71:   }
+  [673] - L72: 
+  [674] - L73:   // 构建PPT URL
+  [675] - L74:   buildPptUrl(query, params = {}) {
+  [676] - L75:     params.opage = params.page || "middle";
+  [677] - L76:     params.page = "generate";
+  [678] - L77:     params.mod = 'phrase';
+  [679] - L78:     params.title = query;
+  [680] - L79:     const url = new URL(this.pptBaseUrl);
+  [681] - L80:     url.pathname = '/aippt';
+  [682] - L81:     url.search = new URLSearchParams(params).toString();
+  [683] - L82:     return url.toString();
+  [684] - L83:   }
+  [685] - L84: 
+  [686] - L85:   // 构建问AI URL
+  [687] - L86:   buildAitoolsUrl(query, params = {}) {
+  [688] - L87:     params.search = query;
+  [689] - L88:     const url = new URL(this.aitoolsBaseUrl);
+  [690] - L89:     url.search = new URLSearchParams(params).toString();
+  [691] - L90:     return url.toString();
+  [692] - L91:   }
+  [693] - L92: 
+  [694] - L93:   // 统一提交入口
+  [695] - L94:   submit({ query = "", type = "", params = {} }) {
+  [696] - L95:     if (!query || !query.trim()) {
+  [697] - L96:       const url = new URL(AIToolService.API_PREFIX[type]);
+  [698] - L97:       url.search = new URLSearchParams(params).toString();
+  [699] - L98:       return url.toString();
+  [700] - L99:     }
+  [701] - L100: 
+  [702] - L101:     return this.buildUrl({ query, type, params });
+  [703] - L102:   }
+  [704] - L103: 
+  [705] - L104:   // 打开新标签页
+  [706] - L105:   openInNewTab(url) {
+  [707] - L106:     if (url) {
+  [708] - L107:       window.open(url, "_blank");
+  [709] - L108:     }
+  [710] - L109:   }
+  [711] - L110: 
+  [712] - L111:   // 提交并打开新标签页
+  [713] - L112:   submitAndOpen({ query = "", type = "", params = {} }) {
+  [714] - L113:     const url = this.submit({ query, type, params });
+  [715] - L114:     if (url) {
+  [716] - L115:       this.openInNewTab(url);
+  [717] - L116:     }
+  [718] - L117:   }
+  [719] - L118: }
+  [720] - L119: 
+  [721] - L120: export default AIToolService;
+  [722] - L121: 
+  [723] - L122: const aitoolService = new AIToolService();
+  [724] - L123: export { aitoolService };
+
+## dev/result/ai-searchbox/services/logService.js
+  [725] - L2:   /**
+  [726] - L3:    * 推荐接口打点模块名
+  [727] - L4:    * 1. suggest-log
+  [728] - L5:    * 2. sug-hot-icon
+  [729] - L6:    */
+  [730] - L9:     SUG_HOT_ICON: 'sug-hot-icon',
+  [731] + L4:     PLACEHOLDER: 'placeholder',
+  [732] + L5:     RICH_PREVIEW: 'rich-preview',
+  [733] + L6:   };
+  [734] + L7: 
+  [735] + L8:   /**
+  [736] + L9:    * 常用模块别名，供外部使用：
+  [737] + L10:    */
+  [738] + L11:   static MODULE_ALIAS = {
+  [739] + L12:     placeholder: LogService.MODULE_NAME.PLACEHOLDER,
+  [740] + L13:     suggest: LogService.MODULE_NAME.SUGGEST_LOG,
+  [741] + L14:     preview: LogService.MODULE_NAME.RICH_PREVIEW,
+  [742] + L15:   };
+  [743] + L16: 
+  [744] + L17:   static LOG_TYPE = {
+  [745] + L18:     CLICK: 'click',
+  [746] + L19:     SHOW: 'disp',
+  [747] + L24:     this.createModuleLogger = this.createModuleLogger.bind(this);
+  [748] + L25:     this.getModule = this.getModule.bind(this);
+  [749] + L26: 
+  [750] + L27:     Object.entries(LogService.MODULE_ALIAS).forEach(([alias, mod]) => {
+  [751] + L28:       this[alias] = this.createModuleLogger(mod);
+  [752] + L29:     });
+  [753] - L16:   /**
+  [754] - L17:    * 通用打点方法
+  [755] - L18:    * @param {String} mod 模块名
+  [756] - L19:    * @param {Object} args Key/Value对的打点参数，通过 type 字段区分点击(click)/曝光(disp)等
+  [757] - L20:    * @param {String} gifPath gif路径，默认为 'so/click'
+  [758] - L21:    * @param {String} fullpath 完整路径
+  [759] - L22:    */
+  [760] + L32:   // 通用打点方法
+  [761] - L24:     if (So && So.lib && So.lib.log) {
+  [762] + L34:     if (typeof So !== 'undefined' && So.lib && So.lib.log) {
+  [763] + L38: 
+  [764] + L39:   /**
+  [765] + L40:    * 创建模块级打点方法：
+  [766] + L41:    * click -> type: click
+  [767] + L42:    * show -> type: disp
+  [768] + L43:    */
+  [769] + L44:   createModuleLogger(mod) {
+  [770] + L45:     return {
+  [771] + L46:       click: (args = {}, gifPath = 'so/click', fullpath = '') => this.log({
+  [772] + L47:         mod,
+  [773] + L48:         type: LogService.LOG_TYPE.CLICK,
+  [774] + L49:         ...args,
+  [775] + L50:       }, gifPath, fullpath),
+  [776] + L51:       show: (args = {}, gifPath = 'so/click', fullpath = '') => this.log({
+  [777] + L52:         mod,
+  [778] + L53:         type: LogService.LOG_TYPE.SHOW,
+  [779] + L54:         ...args,
+  [780] + L55:       }, gifPath, fullpath),
+  [781] + L56:       log: (args = {}, gifPath = 'so/click', fullpath = '') => this.log({
+  [782] + L57:         mod,
+  [783] + L58:         ...args,
+  [784] + L59:       }, gifPath, fullpath),
+  [785] + L60:     };
+  [786] + L61:   }
+  [787] + L62: 
+  [788] + L63:   /**
+  [789] + L64:    * 获取任意模块打点器，便于未预置模块快速接入
+  [790] + L65:    */
+  [791] + L66:   getModule(mod) {
+  [792] + L67:     return this.createModuleLogger(mod);
+  [793] + L68:   }
+
+## dev/result/ai-searchbox/services/suggestService.js
+  [794] + L108:           superSug: 1,
+  [795] + L109: 
+  [796] - L302:           aitool: item.aitool || "",
+  [797] - L396:           aitool: item.aitool || "",
+
+## resource/css/ask_ai.css
+  [798] - L177: body.animated-header #tabs-wrap #g-hd-tabs a[data-i="ai_ask"] {
+  [799] - L178:   background: linear-gradient(273deg, #892EFF -50.52%, #2E51FF 73.88%);
+  [800] - L179:   background-clip: text;
+  [801] - L180:   -webkit-background-clip: text;
+  [802] - L181:   -webkit-text-fill-color: transparent;
+  [803] - L182:   color: transparent;
+  [804] - L183:   font-weight: 500;
+  [805] - L184: }
+  [806] - L185: 
+
+## resource/css/index.css
+  [807] - L333: .res-recommend-tag .button-wrap a,
+  [808] - L340: .res-recommend-tag .button-wrap,
+  [809] - L341: .res-recommend-tag .button-wrap {
+  [810] - L342:     max-height: 116px;
+  [811] - L343: }
+  [812] - L344: 
+  [813] - L522: .res-recommend-tag.show-less .button-wrap{max-height: 66px;}
+  [814] - L523: .res-recommend-tag.show-less .button-wrap,.res-recommend-tag.show-less .button-wrap {max-height: 74px;}
+  [815] - L524: .abv-5292-cpc_lianhesy_4 .res-recommend-tag.show-less .button-wrap,.abv-5292-cpc_lianhesy_5 .res-recommend-tag.show-less .button-wrap {max-height: 74px;}
+
+## resource/css/noresult-body.css
+  [816] - L148: body #footer{ z-index:5; text-indent:148px;padding-left:0;bottom: 0;left:0;width: 100%;}
+  [817] - L149: #footer #haosougw{padding-left: 0px;}
+
+## resource/css/result/folding.css
+  [818] - L5: /* .abv-5670-cpc_pos_1 .folding.hide-res-folding .mod-relation{display:none;} */
+
+## resource/css/result/others.css
+  [819] + L19: .wide-version-result #main .inline-recommend .item-mixed {max-height: 110px !important;}
+  [820] - L88: .abv-6105-cpc_rs5_2 #main .inline-recommend .item .inline-recommend-item-link::before,
+  [821] - L89: .abv-6105-cpc_rs5_3 #main .inline-recommend .item-mixed a::before {
+  [822] - L90:     content: '';
+  [823] - L91:     background: url('https://so.360tres.com/dml/28_84_/t110b9a93014ef702551b13b1a0.webp');
+  [824] - L92:     background-position: 0 -14px;
+  [825] - L93:     background-repeat: no-repeat;
+  [826] - L94:     background-size: 14px 42px;
+  [827] - L95:     display: inline-block;
+  [828] - L96:     width: 14px;
+  [829] - L97:     height: 14px;
+  [830] - L98:     position: relative;
+  [831] - L99:     top: 2px;
+  [832] - L100:     margin-right: 6px;
+  [833] - L101: }
+  [834] - L102: .abv-6105-cpc_rs5_2 #main .inline-recommend .item:hover .inline-recommend-item-link::before,
+  [835] - L103: .abv-6105-cpc_rs5_3 #main .inline-recommend .item-mixed:hover a::before {
+  [836] - L104:     background-position: 0 -28px;
+  [837] - L105: }
+  [838] - L106: 
+  [839] - L110: 
+  [840] - L111: .abv-2339-3 #main .inline-recommend{margin-bottom: -4px;}
+  [841] - L112: .abv-2339-4 #main .inline-recommend{margin-bottom: -2px;}
+  [842] - L113: .abv-2339-3 #main .inline-recommend .item span{margin-bottom:4px}
+  [843] - L114: .abv-2339-3 #main .inline-recommend .inline-recommend-title,
+  [844] - L115: .abv-2339-4 #main .inline-recommend .inline-recommend-title,
+  [845] - L116: .abv-2339-3 .so_feedback, 
+  [846] - L117: .abv-2339-3 .so_feedback a,
+  [847] - L118: .abv-2339-3 .so_feedback:visited,
+  [848] - L119: .abv-2339-4 .so_feedback, 
+  [849] - L120: .abv-2339-4 .so_feedback a,
+  [850] - L121: .abv-2339-4 .so_feedback:visited{font-size: 13px;line-height:21px;height:21px;}
+  [851] - L122: .abv-2339-3 .so_feedback a .so_feedback_txt:hover,
+  [852] - L123: .abv-2339-4 .so_feedback a .so_feedback_txt:hover{text-decoration: none;}
+  [853] - L124: .abv-2339-3 #main .inline-recommend.less .item span{max-width:258px;overflow: hidden;text-overflow: ellipsis;}
+  [854] - L125: .abv-2339-3 #main .inline-recommend.least .item span{max-width:164px;overflow: hidden;text-overflow: ellipsis;}
+  [855] - L126: .abv-2339-4 #main .inline-recommend  .item a{text-decoration: none;font-size: 13px;display: inline-block;border-radius: 6px;height: 28px;line-height: 28px;background: #f5f5f5;padding: 0 10px;text-decoration: none;margin: 0 10px 3px 0;overflow: hidden;white-space: nowrap;text-overflow: ellipsis;max-width: 510px;}
+  [856] - L127: .abv-2339-4 #main .inline-recommend .item a:hover {background: #f1f3fe; border-color: #b8b9fa;}
+  [857] - L128: .abv-2339-4 #main .inline-recommend .inline-recommend-item{padding-top: 6px;max-height: 104px!important;margin-right: -10px;}
+  [858] - L129: .abv-2339-4 .inline-recommend-item.so_feedback_edit a:after{background: url(https://p0.ssl.qhimg.com/t0191be2e4cb01327ec.png) no-repeat;background-image: -webkit-image-set(url(https://p0.ssl.qhimg.com/t0191be2e4cb01327ec.png) 1x,url(https://p3.ssl.qhimg.com/t015ee64f2634bd3262.png) 2x);background-position: -2px -2px;height: 18px;left: auto;right: 5px;top: 5px;width: 18px;z-index: 3;}
+  [859] - L130: 
+  [860] - L131: /* 点推混排 */
+  [861] - L132: .abv-5730-test #main .inline-recommend.inline-recommend-inc .item span a{width: auto !important;}
+  [862] - L133: .abv-5730-test #main .inline-recommend.inline-recommend-inc .item span {display: inline !important;margin-right: 8px !important;}
+  [863] - L134: .abv-5730-test #main .inline-recommend.inline-recommend-inc{margin-bottom: 8px;}
+  [864] - L135: .abv-5730-test #main .inline-recommend.inline-recommend-inc .inline-recommend-item{max-height: 74px !important;}
+  [865] - L136: .abv-5730-test #main .inline-recommend.inline-recommend-inc.show-more-lines .inline-recommend-item{max-height: 104px !important;}
+  [866] - L137: 
+
+## resource/js/result/inline-recommend.js
+  [867] - L190:                             var isLianheSy = So.lib.checkAbv(5292, 'cpc_lianhesy_5') || So.lib.checkAbv(5292, 'cpc_lianhesy_4')
+  [868] - L191:                             if (isLianheSy) {
+  [869] - L192:                                 var q = So.comm.q;
+  [870] - L193:                                 var pattern = new RegExp(q, 'ig');
+  [871] - L194:                                 for (var i = 0; i < queries.length; i++) {
+  [872] - L195:                                     queries[i].title = queries[i].title.replace(pattern, '<em>' + q + '</em>');
+  [873] - L196:                                 }
+  [874] - L197:                             }
+  [875] - L204:                             if (!So.lib.checkAbv(2339, '4') && queries.length > 9) {
+  [876] + L196:                             if (queries.length > 9) {
+  [877] - L213:                             if(typeof res.data === 'object' && res.data !== null && res.data.is_inc && So.lib.checkAbv(5730, 'test')) {
+  [878] - L214:                                 inlineClass += ' show-more-lines';
+  [879] - L215:                             }
+  [880] - L216: 
+  [881] - L217:                             if(So.lib.checkAbv(5730, 'test')){
+  [882] - L218:                                 inlineClass += ' inline-recommend-inc'
+  [883] - L219:                             }
+  [884] - L220: 
+  [885] - L244:                                 if (So.lib.checkAbv(5730, 'test')) {
+  [886] - L245:                                     var maxLength = 0;
+  [887] - L246: 
+  [888] - L247:                                     // 获取最大列长
+  [889] - L248:                                     for (var i = 0; i < result.length; i++) {
+  [890] - L249:                                         if (result[i] && result[i].length > maxLength) {
+  [891] - L250:                                             maxLength = result[i].length;
+  [892] - L251:                                         }
+  [893] - L252:                                     }
+  [894] - L253: 
+  [895] - L254:                                     var merged = [];
+  [896] - L255: 
+  [897] - L256:                                     // 行优先遍历交错合并
+  [898] - L257:                                     for (var j = 0; j < maxLength; j++) {
+  [899] - L258:                                         for (var k = 0; k < result.length; k++) {
+  [900] - L259:                                             if (result[k] && typeof result[k][j] !== 'undefined') {
+  [901] - L260:                                                 merged.push(result[k][j]);
+  [902] - L261:                                             }
+  [903] - L262:                                         }
+  [904] - L263:                                     }
+  [905] - L264: 
+  [906] - L265:                                     result = [merged];
+  [907] - L266:                                 }
+  [908] - L292:                             var showMixed = So.lib.checkAbv(6105, 'cpc_rs5_3');
+  [909] + L253:                             var showMixed = false;
+  [910] - L333:                                         if(So.lib.checkAbv(5730, 'test')) {
+  [911] - L334:                                             var pos = j + i;
+  [912] - L335:                                         }
+  [913] - L337:                                         // 联合商业实验下不转义加粗<em>
+  [914] - L338:                                         if (!isLianheSy) {
+  [915] - L339:                                             query = So.lib.escapeHTML(query);
+  [916] - L340:                                         }
+  [917] + L295:                                         query = So.lib.escapeHTML(query);
+  [918] - L421:             if (So.lib.checkAbv(2339, '3') || So.lib.checkAbv(2339, '4')) {
+  [919] - L422:                 var self = this;
+  [920] - L423:                 // p1内容太长，分两个打
+  [921] - L424:                 if (params.p1) {
+  [922] - L425:                     So.lib.log(mod, { p1: params.p1, type: 'p1' + params.type });
+  [923] - L426:                 }
+  [924] - L427:                 So.lib.log(mod, $.extend({ psid: So.comm.sid, pssid: this.pssid }, params, {
+  [925] - L428:                     p1: '',
+  [926] - L429:                     title: self.getUrlParam('title', params.p1),
+  [927] - L430:                     title_red: self.getUrlParam('title_red', params.p1),
+  [928] - L431:                     ip: self.getUrlParam('ip', params.p1),
+  [929] - L432:                     corr: self.getUrlParam('corr', params.p1),
+  [930] - L433:                     huid: self.getUrlParam('huid', params.p1)
+  [931] - L434:                 }));
+  [932] - L435:             } else {
+  [933] - L436:                 So.lib.log(mod, $.extend({ psid: So.comm.sid, pssid: this.pssid }, params));
+  [934] - L437:             }
+  [935] + L376:             So.lib.log(mod, $.extend({ psid: So.comm.sid, pssid: this.pssid }, params));
+  [936] - L443:             if (So.lib.checkAbv(2339, '3')) {
+  [937] - L444:                 if (!self.$inlineRecommend.attr('data-rest')) {
+  [938] - L445:                     $.each(self.$inlineRecommend.find('.item'), function (i, elm) {
+  [939] - L446:                         self.$inlineRecommend.attr('data-rest', 1)
+  [940] - L447:                         // 被隐藏的 >6 重排
+  [941] - L448:                         if (!So.lib.isVisible($(elm), false, self.$inlineRecommend) && self.$inlineRecommend.find('.inline-recommend-item a').length > 6 && i == 2) {
+  [942] - L449:                             self.$inlineRecommend.addClass('less');
+  [943] - L450: 
+  [944] - L451:                             $.each(self.$inlineRecommend.find('.item'), function (i, item) {
+  [945] - L452:                                 $(item).find('span:eq(2)').remove();
+  [946] - L453:                             });
+  [947] - L454: 
+  [948] - L455:                             setTimeout(function () {
+  [949] - L456:                                 self.$inlineRecommend.find('.item:eq(0)').find('span:eq(1)').insertAfter(self.$inlineRecommend.find('.item:eq(1)').find('span:eq(0)'));
+  [950] - L457:                             }, 0);
+  [951] - L458:                             setTimeout(function () {
+  [952] - L459:                                 self.$inlineRecommend.find('.item:eq(1)').find('span:last').insertAfter(self.$inlineRecommend.find('.item:eq(0)').find('span:eq(0)'));
+  [953] - L460:                             }, 0);
+  [954] - L461:                             setTimeout(function () {
+  [955] - L462:                                 self.$inlineRecommend.find('.item:eq(2)').find('span:eq(0)').insertAfter(self.$inlineRecommend.find('.item:eq(0)').find('span:eq(0)'));
+  [956] - L463:                             }, 0);
+  [957] - L464:                             setTimeout(function () {
+  [958] - L465:                                 self.$inlineRecommend.find('.item:eq(2)').find('span:eq(0)').insertAfter(self.$inlineRecommend.find('.item:eq(1)').find('span:eq(1)'));
+  [959] - L466:                             }, 0);
+  [960] - L467:                         }
+  [961] - L468:                     });
+  [962] - L469:                 }
+  [963] - L470:             }
+  [964] - L471: 
+
+Total: 965 change lines

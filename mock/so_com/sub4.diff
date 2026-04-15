@@ -1,0 +1,296 @@
+diff --git a/resource/css/ask_ai.css b/resource/css/ask_ai.css
+--- a/resource/css/ask_ai.css
++++ b/resource/css/ask_ai.css
+@@ -174,15 +174,6 @@
+   animation: animated-header-nav-in 120ms ease-out 120ms both;
+ }
+ 
+-body.animated-header #tabs-wrap #g-hd-tabs a[data-i="ai_ask"] {
+-  background: linear-gradient(273deg, #892EFF -50.52%, #2E51FF 73.88%);
+-  background-clip: text;
+-  -webkit-background-clip: text;
+-  -webkit-text-fill-color: transparent;
+-  color: transparent;
+-  font-weight: 500;
+-}
+-
+ body.animated-header #tabs-wrap #g-hd-tabs a[data-i="web_page"] {
+   color: #333;
+   font-weight: 500;
+diff --git a/resource/css/index.css b/resource/css/index.css
+--- a/resource/css/index.css
++++ b/resource/css/index.css
+@@ -330,18 +330,12 @@
+     object-position: 0 -28px;
+ }
+ 
+-.res-recommend-tag .button-wrap a,
+ .res-recommend-tag .button-wrap a {
+     font-size: 14px;
+     line-height: 32px;
+     height: 32px;
+ }
+ 
+-.res-recommend-tag .button-wrap,
+-.res-recommend-tag .button-wrap {
+-    max-height: 116px;
+-}
+-
+ /*顶部相关推荐*/
+ #rs-top{display:block;width:590px;height:25px;line-height:22px;position:relative;font-size: 13px;line-height: 1.5em;margin-bottom: 15px;margin-top: 0;overflow:hidden;}
+ #rs-top dt, #head_rs_top dt{color:#666666;float:left;font-weight:normal;}
+@@ -519,9 +513,6 @@
+ .res-recommend-tag .button-wrap a .hot-rising-text{ width: 14px; height: 14px;vertical-align: -2px;}
+ .res-recommend-tag .button-wrap a:hover { background: #f1f3fe; color: #2366FF }
+ .res-recommend-tag .button-wrap .aibox { background: linear-gradient(to right, #EDF6FA, #F5F2FC); }
+-.res-recommend-tag.show-less .button-wrap{max-height: 66px;}
+-.res-recommend-tag.show-less .button-wrap,.res-recommend-tag.show-less .button-wrap {max-height: 74px;}
+-.abv-5292-cpc_lianhesy_4 .res-recommend-tag.show-less .button-wrap,.abv-5292-cpc_lianhesy_5 .res-recommend-tag.show-less .button-wrap {max-height: 74px;}
+ .abv-5292-cpc_lianhesy_4 #main .inline-recommend .item span a em,.abv-5292-cpc_lianhesy_5 #main .inline-recommend .item span a em {color: #2438cf;text-decoration: none;font-weight: 600;}
+ .abv-5292-cpc_lianhesy_4 #main .inline-recommend .item span,.abv-5292-cpc_lianhesy_5 #main .inline-recommend .item span {height: 32px;line-height: 32px;}
+ .hide-res-folding .res-recommend-tag{display: none;}
+diff --git a/resource/css/noresult-body.css b/resource/css/noresult-body.css
+--- a/resource/css/noresult-body.css
++++ b/resource/css/noresult-body.css
+@@ -145,8 +145,6 @@
+ 
+ html,body{height: 100%;}
+ body{position: relative;}
+-body #footer{ z-index:5; text-indent:148px;padding-left:0;bottom: 0;left:0;width: 100%;}
+-#footer #haosougw{padding-left: 0px;}
+ /* 实时热点 */
+ .hot-search{ 
+ 	font-size: 13px;
+diff --git a/resource/css/result/folding.css b/resource/css/result/folding.css
+--- a/resource/css/result/folding.css
++++ b/resource/css/result/folding.css
+@@ -2,6 +2,5 @@
+ .folding.hide-res-folding .res-list{display:none;}
+ .folding.hide-res-folding .res-list-unfold{display:block;}
+ .folding.hide-res-folding .inline-recommend{display:none;}
+-/* .abv-5670-cpc_pos_1 .folding.hide-res-folding .mod-relation{display:none;} */
+ #tips-res-fold{font-size:14px;line-height: 21px; color:#333;position:relative;z-index:0;display: inline-block;}
+ #tips-res-fold p{margin-top: 5px;}
+diff --git a/resource/css/result/others.css b/resource/css/result/others.css
+--- a/resource/css/result/others.css
++++ b/resource/css/result/others.css
+@@ -16,6 +16,7 @@
+ #main .inline-recommend{padding: 0; position: relative;bottom: 12px;margin-bottom: 24px;border:none;line-height:23px; max-height: none!important; height: auto!important;}
+ #main .inline-recommend-inner{position: relative; max-height: none!important;width:100%;overflow: hidden;padding-bottom:0;}
+ #main .inline-recommend .item{ float: left; max-height: none!important; max-width: 100%;}
++.wide-version-result #main .inline-recommend .item-mixed {max-height: 110px !important;}
+ #main .inline-recommend .inline-recommend-title{ display: block; position: static!important; color: #333; font-size: 13px;line-height: 21px; height: 21px;}
+ #main .inline-recommend .inline-recommend-item{ display: block; text-indent: 0!important; overflow: hidden; max-height: 104px !important; padding-top: 8px;}
+ .abv-5292-cpc_lianhesy_4 #main .inline-recommend .inline-recommend-item,.abv-5292-cpc_lianhesy_5 #main .inline-recommend .inline-recommend-item {max-height: 120px!important;}
+@@ -85,56 +86,9 @@
+     border-radius: 0;
+ }
+ 
+-.abv-6105-cpc_rs5_2 #main .inline-recommend .item .inline-recommend-item-link::before,
+-.abv-6105-cpc_rs5_3 #main .inline-recommend .item-mixed a::before {
+-    content: '';
+-    background: url('https://so.360tres.com/dml/28_84_/t110b9a93014ef702551b13b1a0.webp');
+-    background-position: 0 -14px;
+-    background-repeat: no-repeat;
+-    background-size: 14px 42px;
+-    display: inline-block;
+-    width: 14px;
+-    height: 14px;
+-    position: relative;
+-    top: 2px;
+-    margin-right: 6px;
+-}
+-.abv-6105-cpc_rs5_2 #main .inline-recommend .item:hover .inline-recommend-item-link::before,
+-.abv-6105-cpc_rs5_3 #main .inline-recommend .item-mixed:hover a::before {
+-    background-position: 0 -28px;
+-}
+-
+ #main .inline-recommend .item.count-2 span{width: 266px;}
+ #main .inline-recommend .item.count-3 span{width: 174px;}
+ 
+-
+-.abv-2339-3 #main .inline-recommend{margin-bottom: -4px;}
+-.abv-2339-4 #main .inline-recommend{margin-bottom: -2px;}
+-.abv-2339-3 #main .inline-recommend .item span{margin-bottom:4px}
+-.abv-2339-3 #main .inline-recommend .inline-recommend-title,
+-.abv-2339-4 #main .inline-recommend .inline-recommend-title,
+-.abv-2339-3 .so_feedback, 
+-.abv-2339-3 .so_feedback a,
+-.abv-2339-3 .so_feedback:visited,
+-.abv-2339-4 .so_feedback, 
+-.abv-2339-4 .so_feedback a,
+-.abv-2339-4 .so_feedback:visited{font-size: 13px;line-height:21px;height:21px;}
+-.abv-2339-3 .so_feedback a .so_feedback_txt:hover,
+-.abv-2339-4 .so_feedback a .so_feedback_txt:hover{text-decoration: none;}
+-.abv-2339-3 #main .inline-recommend.less .item span{max-width:258px;overflow: hidden;text-overflow: ellipsis;}
+-.abv-2339-3 #main .inline-recommend.least .item span{max-width:164px;overflow: hidden;text-overflow: ellipsis;}
+-.abv-2339-4 #main .inline-recommend  .item a{text-decoration: none;font-size: 13px;display: inline-block;border-radius: 6px;height: 28px;line-height: 28px;background: #f5f5f5;padding: 0 10px;text-decoration: none;margin: 0 10px 3px 0;overflow: hidden;white-space: nowrap;text-overflow: ellipsis;max-width: 510px;}
+-.abv-2339-4 #main .inline-recommend .item a:hover {background: #f1f3fe; border-color: #b8b9fa;}
+-.abv-2339-4 #main .inline-recommend .inline-recommend-item{padding-top: 6px;max-height: 104px!important;margin-right: -10px;}
+-.abv-2339-4 .inline-recommend-item.so_feedback_edit a:after{background: url(https://p0.ssl.qhimg.com/t0191be2e4cb01327ec.png) no-repeat;background-image: -webkit-image-set(url(https://p0.ssl.qhimg.com/t0191be2e4cb01327ec.png) 1x,url(https://p3.ssl.qhimg.com/t015ee64f2634bd3262.png) 2x);background-position: -2px -2px;height: 18px;left: auto;right: 5px;top: 5px;width: 18px;z-index: 3;}
+-
+-/* 点推混排 */
+-.abv-5730-test #main .inline-recommend.inline-recommend-inc .item span a{width: auto !important;}
+-.abv-5730-test #main .inline-recommend.inline-recommend-inc .item span {display: inline !important;margin-right: 8px !important;}
+-.abv-5730-test #main .inline-recommend.inline-recommend-inc{margin-bottom: 8px;}
+-.abv-5730-test #main .inline-recommend.inline-recommend-inc .inline-recommend-item{max-height: 74px !important;}
+-.abv-5730-test #main .inline-recommend.inline-recommend-inc.show-more-lines .inline-recommend-item{max-height: 104px !important;}
+-
+ /*suggest*/
+ .ac_wrap{box-shadow:0px 1px 3px 0 rgba(0,0,0,0.08)}
+ .ac_wrap_inner {border: 2px solid #1cb054;border-top:0;border-radius: 0 0 10px 10px;overflow: hidden;}
+diff --git a/resource/js/result/inline-recommend.js b/resource/js/result/inline-recommend.js
+--- a/resource/js/result/inline-recommend.js
++++ b/resource/js/result/inline-recommend.js
+@@ -187,21 +187,13 @@
+                             self.version = ver;
+ 
+                             var queries = res.data.queries;
+-                            var isLianheSy = So.lib.checkAbv(5292, 'cpc_lianhesy_5') || So.lib.checkAbv(5292, 'cpc_lianhesy_4')
+-                            if (isLianheSy) {
+-                                var q = So.comm.q;
+-                                var pattern = new RegExp(q, 'ig');
+-                                for (var i = 0; i < queries.length; i++) {
+-                                    queries[i].title = queries[i].title.replace(pattern, '<em>' + q + '</em>');
+-                                }
+-                            }
+                             self.pssid = res.data.ssid || '';
+ 
+                             if (So.comm.src == 'SoftMgr_search') {
+                                 ver = 'soft';
+                             }
+ 
+-                            if (!So.lib.checkAbv(2339, '4') && queries.length > 9) {
++                            if (queries.length > 9) {
+                                 queries.length = 9;
+                             }
+ 
+@@ -210,14 +202,6 @@
+                                 inlineClass += ' referer-news-flow';
+                             }
+ 
+-                            if(typeof res.data === 'object' && res.data !== null && res.data.is_inc && So.lib.checkAbv(5730, 'test')) {
+-                                inlineClass += ' show-more-lines';
+-                            }
+-
+-                            if(So.lib.checkAbv(5730, 'test')){
+-                                inlineClass += ' inline-recommend-inc'
+-                            }
+-
+                             var tpl = ['<div class="inline-recommend '+ inlineClass +'" data-url="' + data.url + '" data-ssid="' + self.pssid + '"><div class="inline-recommend-inner"><div class="inline-recommend-title"><span class="recommend-icon"></span>为您推荐<span class="so_feedback"><a href="javascript:;" target="_blank" class="so_feedback_link" data-class="inline-recommend-item"> · <span class="so_feedback_txt">反馈</span></a></span></div> <div class="inline-recommend-item">'];
+ 
+                             function formatData(data) {
+@@ -241,29 +225,6 @@
+                                         break;
+                                     }
+                                 }
+-                                if (So.lib.checkAbv(5730, 'test')) {
+-                                    var maxLength = 0;
+-
+-                                    // 获取最大列长
+-                                    for (var i = 0; i < result.length; i++) {
+-                                        if (result[i] && result[i].length > maxLength) {
+-                                            maxLength = result[i].length;
+-                                        }
+-                                    }
+-
+-                                    var merged = [];
+-
+-                                    // 行优先遍历交错合并
+-                                    for (var j = 0; j < maxLength; j++) {
+-                                        for (var k = 0; k < result.length; k++) {
+-                                            if (result[k] && typeof result[k][j] !== 'undefined') {
+-                                                merged.push(result[k][j]);
+-                                            }
+-                                        }
+-                                    }
+-
+-                                    result = [merged];
+-                                }
+ 
+                                 return result;
+                             }
+@@ -289,7 +250,7 @@
+                             var item = getTableInfo(queries);
+                             var result = formatData(queries);
+                             var target = So.comm.fr == '360weishi' ? '_self' : '_blank';
+-                            var showMixed = So.lib.checkAbv(6105, 'cpc_rs5_3');
++                            var showMixed = false;
+ 
+                             if (showMixed) {
+                                 // 混排样式
+@@ -330,14 +291,8 @@
+                                     tpl.push('<div class="item' + addr + '">');
+                                     for (var j = 0; j < result[i].length; j++) {
+                                         var pos = j * item.col + i;
+-                                        if(So.lib.checkAbv(5730, 'test')) {
+-                                            var pos = j + i;
+-                                        }
+                                         var query = typeof result[i][j] === 'object' ? result[i][j].title : result[i][j];
+-                                        // 联合商业实验下不转义加粗<em>
+-                                        if (!isLianheSy) {
+-                                            query = So.lib.escapeHTML(query);
+-                                        }
++                                        query = So.lib.escapeHTML(query);
+                                         var reason = typeof result[i][j] === 'object' && result[i][j].rec_reason;
+                                         var reasonHTML = '';
+                                         if (reason === 'new') {
+@@ -418,57 +373,12 @@
+             }
+         },
+         sendLog: function (mod, params) {
+-            if (So.lib.checkAbv(2339, '3') || So.lib.checkAbv(2339, '4')) {
+-                var self = this;
+-                // p1内容太长，分两个打
+-                if (params.p1) {
+-                    So.lib.log(mod, { p1: params.p1, type: 'p1' + params.type });
+-                }
+-                So.lib.log(mod, $.extend({ psid: So.comm.sid, pssid: this.pssid }, params, {
+-                    p1: '',
+-                    title: self.getUrlParam('title', params.p1),
+-                    title_red: self.getUrlParam('title_red', params.p1),
+-                    ip: self.getUrlParam('ip', params.p1),
+-                    corr: self.getUrlParam('corr', params.p1),
+-                    huid: self.getUrlParam('huid', params.p1)
+-                }));
+-            } else {
+-                So.lib.log(mod, $.extend({ psid: So.comm.sid, pssid: this.pssid }, params));
+-            }
++            So.lib.log(mod, $.extend({ psid: So.comm.sid, pssid: this.pssid }, params));
+         },
+         showRecomm: function () {
+             var self = this;
+             var isZhuiwen = self.logMod === self.logMod_zhuiwen;
+ 
+-            if (So.lib.checkAbv(2339, '3')) {
+-                if (!self.$inlineRecommend.attr('data-rest')) {
+-                    $.each(self.$inlineRecommend.find('.item'), function (i, elm) {
+-                        self.$inlineRecommend.attr('data-rest', 1)
+-                        // 被隐藏的 >6 重排
+-                        if (!So.lib.isVisible($(elm), false, self.$inlineRecommend) && self.$inlineRecommend.find('.inline-recommend-item a').length > 6 && i == 2) {
+-                            self.$inlineRecommend.addClass('less');
+-
+-                            $.each(self.$inlineRecommend.find('.item'), function (i, item) {
+-                                $(item).find('span:eq(2)').remove();
+-                            });
+-
+-                            setTimeout(function () {
+-                                self.$inlineRecommend.find('.item:eq(0)').find('span:eq(1)').insertAfter(self.$inlineRecommend.find('.item:eq(1)').find('span:eq(0)'));
+-                            }, 0);
+-                            setTimeout(function () {
+-                                self.$inlineRecommend.find('.item:eq(1)').find('span:last').insertAfter(self.$inlineRecommend.find('.item:eq(0)').find('span:eq(0)'));
+-                            }, 0);
+-                            setTimeout(function () {
+-                                self.$inlineRecommend.find('.item:eq(2)').find('span:eq(0)').insertAfter(self.$inlineRecommend.find('.item:eq(0)').find('span:eq(0)'));
+-                            }, 0);
+-                            setTimeout(function () {
+-                                self.$inlineRecommend.find('.item:eq(2)').find('span:eq(0)').insertAfter(self.$inlineRecommend.find('.item:eq(1)').find('span:eq(1)'));
+-                            }, 0);
+-                        }
+-                    });
+-                }
+-            }
+-
+             // 追问版点推的曝光打点
+             if (isZhuiwen) {
+                 setTimeout(function() {

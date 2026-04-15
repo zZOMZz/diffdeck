@@ -1,0 +1,346 @@
+diff --git a/application/library/PlatInfoConfig.php b/application/library/PlatInfoConfig.php
+--- a/application/library/PlatInfoConfig.php
++++ b/application/library/PlatInfoConfig.php
+@@ -191,7 +191,7 @@
+             'jsFile' => '',
+             'engineExclude' => '',
+             'engineInclude' => 'onebox|related_search_recommend|keyword_ad|brand_ad|merger',
+-            'uiExclude' => 'side|pagination|feedback|rec-top|res-list',
++            'uiExclude' => 'side|pagination|feedback',
+             'enableAbTest' => true,
+             'excludeAbTestKeys' => ['5985'],
+             'createDate' => '',
+diff --git a/application/models/PlatInfo.php b/application/models/PlatInfo.php
+--- a/application/models/PlatInfo.php
++++ b/application/models/PlatInfo.php
+@@ -315,10 +315,14 @@
+         // 第六类：通过 ob_ext 参数命中特型页（兼容新版软件中间页 softbox）
+         if (!empty($ob_ext)) {
+             $obExtArr = is_array($ob_ext) ? $ob_ext : @json_decode($ob_ext, true);
++            if (!is_array($obExtArr)) {
++                $obExtArr = [];
++            }
++            $filterObType = (string)($obExtArr['filter_ob_type'] ?? '');
++            $filterObTypeList = array_filter(array_map('trim', explode('|', $filterObType)));
+             if (
+-                is_array($obExtArr)
+-                && intval($obExtArr['is_middle_page'] ?? 0) === 1
+-                && ($obExtArr['filter_ob_type'] ?? '') === 'softbox_middle_new'
++                intval($obExtArr['is_middle_page'] ?? 0) === 1
++                && in_array('softbox_middle_new', $filterObTypeList, true)
+             ) {
+                 self::setPlatInfoKey('SOFTBOX');
+                 return;
+diff --git a/application/models/SearchCount.php b/application/models/SearchCount.php
+--- a/application/models/SearchCount.php
++++ b/application/models/SearchCount.php
+@@ -23,12 +23,7 @@
+ 
+     // 判断是否是扩展搜索结果
+     public function isExtendedResult(): bool {
+-        return $this->isInAbTest() || $this->is_extend_query;
+-    }
+-
+-    // 判断是否命中 A/B 实验
+-    private function isInAbTest(): bool {
+-        return AbvModel::check(5670, 'cpc_pos_1');
++        return $this->is_extend_query;
+     }
+ }
+ 
+diff --git a/application/views/index/element/result.php b/application/views/index/element/result.php
+--- a/application/views/index/element/result.php
++++ b/application/views/index/element/result.php
+@@ -167,9 +167,7 @@
+         echo '<div id="ai-recommend-bottom" class="ai-recommend-bottom" data-disp-comm="ai-recommend-bottom"></div>';
+     }
+     
+-    if(!AbvModel::check(5670, 'cpc_pos_1')) {
+-        echo $render_relative;
+-    }
++    echo $render_relative;
+ }
+ 
+ ?>
+diff --git a/application/views/index/guide.php b/application/views/index/guide.php
+--- a/application/views/index/guide.php
++++ b/application/views/index/guide.php
+@@ -36,10 +36,6 @@
+ </div>
+ 
+ <?php
+-    if(AbvModel::check(5670, 'cpc_pos_1')) {
+-        echo $render_relative;
+-    }
+-
+     // 翻页 + 底部链接
+    echo $footer;
+ ?>
+diff --git a/application/views/index/inc/relative.php b/application/views/index/inc/relative.php
+--- a/application/views/index/inc/relative.php
++++ b/application/views/index/inc/relative.php
+@@ -70,28 +70,6 @@
+ 		// 衍生流量
+ 		$col = 2;
+ 		$total = 14;
+-
+-		// 对照
+-		if(AbvModel::check(5670, 'cpc_pos_1')) {
+-			$col = 3;
+-			$total = 15;
+-		}
+-
+-		if(AbvModel::check(5835, 'cpc_rs3_3')) {
+-			$col = 2;
+-			$total = 12;
+-		}
+-	}
+-
+-	if(AbvModel::check(5835, 'cpc_rs3_2')) {
+-		$col = 2;
+-		$total = 12;
+-	}
+-
+-	// 用商联合实验-推荐，底部加一行
+-	$isLianhesy = AbvModel::check(5292, 'cpc_lianhesy_3') || AbvModel::check(5292, 'cpc_lianhesy_4') || AbvModel::check(5292, 'cpc_lianhesy_5') || AbvModel::check(5292, 'cpc_lianhesy_6');
+-	if ($isLianhesy) {
+-		$total += $col;
+ 	}
+ 
+ 	// 新版底部推荐
+@@ -129,7 +107,6 @@
+ 		} else if (isset($item['rec_reason']) && $item['rec_reason'] === 'ai' && !$_v_isIE) {
+ 			$reason = '<img class="new-relative-ai-icon after" src="' . HelperModel::getPicUrl('https://p0.ssl.qhimg.com/t110b9a9301ffd578b1e2a208f5.png', '/dml/28_28_') . '" alt="ai" width="14" height="14" loading="lazy">';
+ 		}
+-		$icon = $isLianhesy ? '<img src="' . HelperModel::getPicUrl('https://p4.ssl.qhimg.com/t110b9a93010affcfe7d9faa8e6.png', '/dml/28_28_') . '" alt="search-icon" width="16" height="16" class="relative-search-icon" loading="lazy">' : '';
+ 
+ 		if (!$_v_isIE) {
+ 			$icon = isset($item['rec_reason']) && $item['rec_reason'] === 'ai' ? '<img class="new-relative-ai-icon before" src="' . HelperModel::getPicUrl('https://p0.ssl.qhimg.com/t110b9a9301ffd578b1e2a208f5.png', '/dml/28_28_') . '" alt="ai" width="14" height="14" loading="lazy">' : '<img src="' . HelperModel::getPicUrl('https://p0.ssl.qhimg.com/t110b9a93014ef702551b13b1a0.png', '/dml/28_84_') . '" alt="search-icon" class="relative-search-icon" loading="lazy">';
+diff --git a/application/views/index/inc/reslist.php b/application/views/index/inc/reslist.php
+--- a/application/views/index/inc/reslist.php
++++ b/application/views/index/inc/reslist.php
+@@ -4,11 +4,8 @@
+     $pos = 0;
+     $adv_t_flag = false;
+     $tips = '';
+-    $middle_suggest_pos = 'middle';
+-    $middle_ci_suggest_pos = '';
+-    $origin_mid_sug = AbvModel::check(5670, 'cpc_pos_1') || (isset($_v_is_extend_result) && $_v_is_extend_result);
++    $middle_suggest_pos = 2;
+     $is_middle_recommended = false;
+-    $has_middle_rank = false;
+     
+     if ($_v_folding === 3) {
+         $html = '<ul class="result hide-spite">';
+@@ -35,30 +32,6 @@
+ 
+     $defaultTopArray = ['wenda_abstract','biu_wenda_yunying', 'news', 'softbox', 'biu_softbox', 'newdict1', 'biu_hanyu_detail', 'baike_term_strong', 'medical_doc_answer_all', 'wenda_huabao', 'weather', '360shoutiao_AI'];
+ 
+-    $middleSuggestData = $_v_results['suggest']['data_middle'] ?? [];
+-    $hasMiddleSuggestData = !empty($middleSuggestData);
+-
+-    if ($origin_mid_sug) {
+-        // 原推荐: 普通浏览器
+-        $middle_suggest_pos = 4;
+-
+-        // 原推荐位置: 360系浏览器
+-        if ($hasMiddleSuggestData && isset($middleSuggestData['is_lm']) && (int)$middleSuggestData['is_lm'] === 1) {
+-            $middle_suggest_pos = 3;
+-        }
+-    }
+-
+-    // 中推排序实验, 优先级: 默认排序 < 动态排序 < 上移逻辑(onebox等)
+-    if ($hasMiddleSuggestData && !AbvModel::check(6384, 'cpc_middle2_2')) {
+-        $middle_suggest_pos = 1;
+-        $has_middle_rank = true;    // 提高onebox中推上移优先级
+-    }
+-
+-    // 首条官网下方展示AI Rec
+-    if (AbvModel::check(6377, 'cpc_airecom_3') && $_v_is_top_official) {
+-        $middle_suggest_pos = 3;
+-    }
+-
+     foreach ($last_results_items as $index => $item) {    
+         //高级搜索分隔
+         $item_ts = empty($item['timestamp']) ? 0 : (int)$item['timestamp'];
+@@ -103,9 +76,6 @@
+             $className .= ' referer-news-flow';
+             
+             if($pos == $_v_flow_data['position'] + 1){
+-                if (AbvModel::check(5095, 'test')) {
+-                    $html .= '<div id="ai-recommend-bottom" class="ai-recommend-bottom" data-disp-comm="ai-recommend-bottom"></div>';
+-                }
+                 $html .= '<li id="newsflow-toggle">';
+                 $html .= '<div class="g-more-fold"><span>展开更多搜索结果</span><i class="g-icon-arr-down"></i></div>';
+                 $html .= '<div class="g-more-fold g-more-unfold"><span>收起更多搜索结果</span><i class="g-icon-arr-up"></i></div>';
+@@ -130,20 +100,10 @@
+         $html .= '<li' . $kzx . ' class="res-list' . $className . '"'. $url_fp . '>';
+         $showUrlQueryTips = false;
+         $showTongZhanLink = false;
+-        $showAibox = false;
+         if ($item['from'] == 'onebox' || $item['from'] == 'richsum') {
+-            if(isset($item['type']) && in_array($item['type'], $defaultTopArray) && $index <= 2 && ($middle_suggest_pos === 'middle' || (($origin_mid_sug || $has_middle_rank) && !$is_middle_recommended))) {
+-                // 命中上移逻辑 互斥掉。 即llm_recommend_onebox_type为空 或 llm_recommend_onebox_type不为空，并且类型不等于需要上移的类型，才可以做上移。
+-                if(empty($_v_results['llm_recommend_onebox_type']) || (!empty($_v_results['llm_recommend_onebox_type']) && $_v_results['llm_recommend_onebox_type'] !== $item['type']) ){
+-                    $middle_suggest_pos = $index;
+-            }
+-            }
+-           
+-            // aibox情况下
+-            if (isset($item['type']) && $item['type'] == '360shoutiao_AI' && !empty($_v_results['suggest']['data_aibox'])){
+-                $showAibox = true;
+-                $middle_ci_suggest_pos = 2;
+-                $middle_suggest_pos = $index;
++            // 命中首条默认类型时，中推提升到第一条下方。
++            if ($pos === 1 && isset($item['type']) && in_array($item['type'], $defaultTopArray)) {
++                $middle_suggest_pos = $pos;
+             }
+             $html .=  $item['summary'];
+             $showUrlQueryTips = true;
+@@ -223,33 +183,20 @@
+             }
+         }
+ 
+-        if($showAibox && PlatInfoModel::isModuleAllowedForRendering('rec-middle') && PlatInfoModel::isModuleAllowedForRendering('recommend') && $_v_pn <= 5 && !empty($_v_results['suggest']) && !empty($_v_results['suggest']['data_aibox']) 
+-            && !empty($_v_results['suggest']['data_aibox']['list']) && !in_array('relatedSearch', $_v_risk_management_list) && count($_v_results['suggest']['data_aibox']['list']) > 2 && (empty($_v_sug_hide_conf) || empty($_v_sug_hide_conf['sug_middle']))){
+-            if(($middle_suggest_pos !== 'middle' && $index === $middle_suggest_pos)){
+-                $suggest_middle = $this->render(APPLICATION_PATH . "/application/views/index/inc/suggest_middle.php", array(
+-                       'data' => $_v_results['suggest'],
+-                       'fr' => $_v_fr,
+-                       'sid' => @$_v_results['sid'],
+-                       'site_rg' => $_v_site_rg,
+-                       'site_site' => $_v_site_site,
+-                       'site_inurl' => $_v_site_inurl,
+-                       'abv' => $_v_abv,
+-                       'ls' => $_v_ls,
+-                       'lmsid' => $_v_lmsid,
+-                       'lm_extend' => $_v_lm_extend,
+-                       'className' => $className,//$className 传className是为结果折叠使用，例如信息流折叠，电话折叠，风险折叠,
+-                       'showLess' => true,
+-                       'src' => 'related_middle_aibox',
+-                       'suggest_pos' => $middle_suggest_pos,
+-                       'aibox' => true,
+-                       'rank' => $index
+-                   ));
+-               $html .= $suggest_middle;
+-            }
+-        }else if(PlatInfoModel::isModuleAllowedForRendering('rec-middle') && !$is_middle_recommended &&PlatInfoModel::isModuleAllowedForRendering('recommend') && $_v_pn <= 5 && !empty($_v_results['suggest']) && !empty($_v_results['suggest']['data_middle']) 
+-            && isset($_v_results['suggest']['data_middle']['is_lm']) && in_array($_v_results['suggest']['data_middle']['is_lm'], [0,1])
+-            && !empty($_v_results['suggest']['data_middle']['list']) && !in_array('relatedSearch', $_v_risk_management_list) && (empty($_v_sug_hide_conf) || empty($_v_sug_hide_conf['sug_middle']))){
+-            if($_v_results['suggest']['data_middle']['is_lm'] == 0 && (($middle_suggest_pos === 'middle' && $index === 2) || ($middle_suggest_pos !== 'middle' && $index === $middle_suggest_pos))){ 
++        $middleSuggestData = $_v_results['suggest']['data_middle'] ?? [];
++        $canRenderMiddleSuggest = PlatInfoModel::isModuleAllowedForRendering('rec-middle')
++            && PlatInfoModel::isModuleAllowedForRendering('recommend')
++            && $_v_pn <= 5
++            && !empty($_v_results['suggest'])
++            && !empty($middleSuggestData)
++            && !empty($middleSuggestData['list'])
++            && !in_array('relatedSearch', $_v_risk_management_list)
++            && (empty($_v_sug_hide_conf) || empty($_v_sug_hide_conf['sug_middle']));
++        $shouldRenderMiddleSuggest = !$is_middle_recommended
++            && $canRenderMiddleSuggest
++            && $pos === $middle_suggest_pos;
++
++        if($shouldRenderMiddleSuggest){ 
+                 $suggest_middle = $this->render(APPLICATION_PATH . "/application/views/index/inc/suggest_middle.php", array(
+                     'data' => $_v_results['suggest'],
+                     'fr' => $_v_fr,
+@@ -262,34 +209,12 @@
+                     'lmsid' => $_v_lmsid,
+                     'lm_extend' => $_v_lm_extend,
+                     'className' => $className,//$className 传className是为结果折叠使用，例如信息流折叠，电话折叠，风险折叠,
+-                    'showLess' => !$origin_mid_sug && $index === 2 ? false : true,
+-                    'src' => $_v_results['suggest']['data_middle']['src'],
+-                    'suggest_pos' => $middle_suggest_pos,
+-                    'rank' => $index
+-                ));
+-                $is_middle_recommended = true;
+-                $html .= $suggest_middle;
+-            }else if($_v_results['suggest']['data_middle']['is_lm'] == 1 && !$is_middle_recommended &&(($middle_suggest_pos === 'middle' && $index === 2) || ($middle_suggest_pos !== 'middle' && $index === $middle_suggest_pos))){ 
+-                $suggest_middle = $this->render(APPLICATION_PATH . "/application/views/index/inc/suggest_middle.php", array(
+-                    'data' => $_v_results['suggest'],
+-                    'fr' => $_v_fr,
+-                    'sid' => @$_v_results['sid'],
+-                    'site_rg' => $_v_site_rg,
+-                    'site_site' => $_v_site_site,
+-                    'site_inurl' => $_v_site_inurl,
+-                    'abv' => $_v_abv,
+-                    'ls' => $_v_ls,
+-                    'lmsid' => $_v_lmsid,
+-                    'lm_extend' => $_v_lm_extend,
+-                    'className' => $className,//$className 传className是为结果折叠使用，例如信息流折叠，电话折叠，风险折叠
+-                    'src' => $_v_results['suggest']['data_middle']['src'],
+-                    'suggest_pos' => $middle_suggest_pos,
++                    'src' => $middleSuggestData['src'],
++                    'move_to_top' => $middle_suggest_pos === 1 ? true : false,
+                     'rank' => $index
+                 ));
+-
+                 $is_middle_recommended = true;
+                 $html .= $suggest_middle;
+-            }
+         }
+         
+         // 在第 $ad_middle_data['index'] 条结果下面插入middle类型广告
+diff --git a/application/views/index/inc/suggest_middle.php b/application/views/index/inc/suggest_middle.php
+--- a/application/views/index/inc/suggest_middle.php
++++ b/application/views/index/inc/suggest_middle.php
+@@ -1,7 +1,6 @@
+ <?php
+ 	$version = !empty($data['version']) ? $data['version'] : "";
+     $suggest_data = !empty($aibox) ? $data['data_aibox']['list'] : $data['data_middle']['list'];
+-    $is_inc = !empty($data['data_middle']['is_inc']) && AbvModel::check(5730, 'test') ? $data['data_middle']['is_inc'] : 0;
+     if (!empty($rec_ci) && $rec_ci) {
+         $suggest_data = $data['data_ci']['list'];
+     }
+@@ -55,7 +54,7 @@
+     if(empty($style)){
+         $style = '';
+     }
+-    $html .= '<div class="res-recommend-tag g-clearfix' . (!empty($showLess) && !$is_inc ? ' show-less' : '') . ' ' .$style .'" data-logmod="related_middle" data-type="' . ($suggest_pos === 'middle' ? 'middle' : 'middle2top') . '" data-disp="related_middle" data-ext="' . $ext . '" data-version="' . $version . '" data-ci="' . (!empty($rec_ci) && $rec_ci ? true : false) . '" data-rank="' .($rank + 1). '">';
++    $html .= '<div class="res-recommend-tag g-clearfix ' .$style .'" data-logmod="related_middle" data-type="' . ($move_to_top ? 'middle2top' : 'middle') . '" data-disp="related_middle" data-ext="' . $ext . '" data-version="' . $version . '" data-ci="' . (!empty($rec_ci) && $rec_ci ? true : false) . '" data-rank="' .($rank + 1). '">';
+     if(!empty($aibox)){
+         $html .= '<h3 class="title">更多AI相关问答</h3>';
+     }else{
+diff --git a/application/views/index/inc/top_rec.php b/application/views/index/inc/top_rec.php
+--- a/application/views/index/inc/top_rec.php
++++ b/application/views/index/inc/top_rec.php
+@@ -45,7 +45,7 @@
+ 		<span class="so_feedback"><a href="javascript:;" class="so_feedback_link" data-class="so-pdr-bd"> · <span class="so_feedback_txt">反馈</span></a></span>
+ 		<?php } ?>
+ 	</dt>
+-	<dd class="so-pdr-bd <?php echo (AbvModel::check(5730,'test') && !empty($data['data_top']['is_inc']) && $data['data_top']['is_inc'] == 1) ? ' become-two-line' : ''; ?>">
++	<dd class="so-pdr-bd <?php echo (!empty($data['data_top']['is_inc']) && $data['data_top']['is_inc'] == 1) ? ' become-two-line' : ''; ?>">
+ 		<?php
+ 		if(!empty($data['data_top']['list']) && is_array($data['data_top']['list'])){
+             $ext = '';
+diff --git a/application/views/index/index.php b/application/views/index/index.php
+--- a/application/views/index/index.php
++++ b/application/views/index/index.php
+@@ -325,11 +325,6 @@
+         echo $render_browser_err_btn;
+     ?>
+     </div>
+-    <?php
+-        if(AbvModel::check(5670, 'cpc_pos_1')) {
+-            echo $render_relative;
+-        }
+-    ?>
+     <div id="outer"></div>
+     <?php
+         if(!FrModel::is360AISOFr() && $_v_ctrl != 2) { echo $render_footer; }
+diff --git a/application/views/index/plat.php b/application/views/index/plat.php
+--- a/application/views/index/plat.php
++++ b/application/views/index/plat.php
+@@ -276,11 +276,6 @@
+     echo $render_browser_err_btn;
+     ?>
+     </div>
+-    <?php
+-    if(AbvModel::check(5670, 'cpc_pos_1')) {
+-        echo $render_relative;
+-    }
+-    ?>
+     <div id="outer"></div>
+     <?php
+         if(!FrModel::is360AISOFr() && !empty($render_footer)) { echo $render_footer; }
