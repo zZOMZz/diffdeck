@@ -1,0 +1,1666 @@
+diff --git a/application/library/PlatInfoConfig.php b/application/library/PlatInfoConfig.php
+index 8add9aee2..89c0496c1 100644
+--- a/application/library/PlatInfoConfig.php
++++ b/application/library/PlatInfoConfig.php
+@@ -191,7 +191,7 @@ class PlatInfoConfig
+             'jsFile' => '',
+             'engineExclude' => '',
+             'engineInclude' => 'onebox|related_search_recommend|keyword_ad|brand_ad|merger',
+-            'uiExclude' => 'side|pagination|feedback|rec-top|res-list',
++            'uiExclude' => 'side|pagination|feedback',
+             'enableAbTest' => true,
+             'excludeAbTestKeys' => ['5985'],
+             'createDate' => '',
+diff --git a/application/models/PlatInfo.php b/application/models/PlatInfo.php
+index 0e5f22ed4..3609d47ce 100644
+--- a/application/models/PlatInfo.php
++++ b/application/models/PlatInfo.php
+@@ -315,10 +315,14 @@ class PlatInfoModel
+         // 第六类：通过 ob_ext 参数命中特型页（兼容新版软件中间页 softbox）
+         if (!empty($ob_ext)) {
+             $obExtArr = is_array($ob_ext) ? $ob_ext : @json_decode($ob_ext, true);
++            if (!is_array($obExtArr)) {
++                $obExtArr = [];
++            }
++            $filterObType = (string)($obExtArr['filter_ob_type'] ?? '');
++            $filterObTypeList = array_filter(array_map('trim', explode('|', $filterObType)));
+             if (
+-                is_array($obExtArr)
+-                && intval($obExtArr['is_middle_page'] ?? 0) === 1
+-                && ($obExtArr['filter_ob_type'] ?? '') === 'softbox_middle_new'
++                intval($obExtArr['is_middle_page'] ?? 0) === 1
++                && in_array('softbox_middle_new', $filterObTypeList, true)
+             ) {
+                 self::setPlatInfoKey('SOFTBOX');
+                 return;
+diff --git a/application/models/SearchCount.php b/application/models/SearchCount.php
+index 6327162b5..fcf35dd83 100644
+--- a/application/models/SearchCount.php
++++ b/application/models/SearchCount.php
+@@ -23,12 +23,7 @@ class SearchCountModel
+ 
+     // 判断是否是扩展搜索结果
+     public function isExtendedResult(): bool {
+-        return $this->isInAbTest() || $this->is_extend_query;
+-    }
+-
+-    // 判断是否命中 A/B 实验
+-    private function isInAbTest(): bool {
+-        return AbvModel::check(5670, 'cpc_pos_1');
++        return $this->is_extend_query;
+     }
+ }
+ 
+diff --git a/application/views/index/element/result.php b/application/views/index/element/result.php
+index 07fea90c8..af26df1aa 100644
+--- a/application/views/index/element/result.php
++++ b/application/views/index/element/result.php
+@@ -167,9 +167,7 @@
+         echo '<div id="ai-recommend-bottom" class="ai-recommend-bottom" data-disp-comm="ai-recommend-bottom"></div>';
+     }
+     
+-    if(!AbvModel::check(5670, 'cpc_pos_1')) {
+-        echo $render_relative;
+-    }
++    echo $render_relative;
+ }
+ 
+ ?>
+diff --git a/application/views/index/guide.php b/application/views/index/guide.php
+index b2593b4c1..d1021f518 100644
+--- a/application/views/index/guide.php
++++ b/application/views/index/guide.php
+@@ -36,10 +36,6 @@
+ </div>
+ 
+ <?php
+-    if(AbvModel::check(5670, 'cpc_pos_1')) {
+-        echo $render_relative;
+-    }
+-
+     // 翻页 + 底部链接
+    echo $footer;
+ ?>
+diff --git a/application/views/index/inc/relative.php b/application/views/index/inc/relative.php
+index e67b00a90..ea47cacac 100644
+--- a/application/views/index/inc/relative.php
++++ b/application/views/index/inc/relative.php
+@@ -70,28 +70,6 @@ if (isset($src) && $src == 'SoftMgr_search') {
+ 		// 衍生流量
+ 		$col = 2;
+ 		$total = 14;
+-
+-		// 对照
+-		if(AbvModel::check(5670, 'cpc_pos_1')) {
+-			$col = 3;
+-			$total = 15;
+-		}
+-
+-		if(AbvModel::check(5835, 'cpc_rs3_3')) {
+-			$col = 2;
+-			$total = 12;
+-		}
+-	}
+-
+-	if(AbvModel::check(5835, 'cpc_rs3_2')) {
+-		$col = 2;
+-		$total = 12;
+-	}
+-
+-	// 用商联合实验-推荐，底部加一行
+-	$isLianhesy = AbvModel::check(5292, 'cpc_lianhesy_3') || AbvModel::check(5292, 'cpc_lianhesy_4') || AbvModel::check(5292, 'cpc_lianhesy_5') || AbvModel::check(5292, 'cpc_lianhesy_6');
+-	if ($isLianhesy) {
+-		$total += $col;
+ 	}
+ 
+ 	// 新版底部推荐
+@@ -129,7 +107,6 @@ if (isset($src) && $src == 'SoftMgr_search') {
+ 		} else if (isset($item['rec_reason']) && $item['rec_reason'] === 'ai' && !$_v_isIE) {
+ 			$reason = '<img class="new-relative-ai-icon after" src="' . HelperModel::getPicUrl('https://p0.ssl.qhimg.com/t110b9a9301ffd578b1e2a208f5.png', '/dml/28_28_') . '" alt="ai" width="14" height="14" loading="lazy">';
+ 		}
+-		$icon = $isLianhesy ? '<img src="' . HelperModel::getPicUrl('https://p4.ssl.qhimg.com/t110b9a93010affcfe7d9faa8e6.png', '/dml/28_28_') . '" alt="search-icon" width="16" height="16" class="relative-search-icon" loading="lazy">' : '';
+ 
+ 		if (!$_v_isIE) {
+ 			$icon = isset($item['rec_reason']) && $item['rec_reason'] === 'ai' ? '<img class="new-relative-ai-icon before" src="' . HelperModel::getPicUrl('https://p0.ssl.qhimg.com/t110b9a9301ffd578b1e2a208f5.png', '/dml/28_28_') . '" alt="ai" width="14" height="14" loading="lazy">' : '<img src="' . HelperModel::getPicUrl('https://p0.ssl.qhimg.com/t110b9a93014ef702551b13b1a0.png', '/dml/28_84_') . '" alt="search-icon" class="relative-search-icon" loading="lazy">';
+diff --git a/application/views/index/inc/reslist.php b/application/views/index/inc/reslist.php
+index 419123ec8..6b2e59c01 100644
+--- a/application/views/index/inc/reslist.php
++++ b/application/views/index/inc/reslist.php
+@@ -4,11 +4,8 @@
+     $pos = 0;
+     $adv_t_flag = false;
+     $tips = '';
+-    $middle_suggest_pos = 'middle';
+-    $middle_ci_suggest_pos = '';
+-    $origin_mid_sug = AbvModel::check(5670, 'cpc_pos_1') || (isset($_v_is_extend_result) && $_v_is_extend_result);
++    $middle_suggest_pos = 2;
+     $is_middle_recommended = false;
+-    $has_middle_rank = false;
+     
+     if ($_v_folding === 3) {
+         $html = '<ul class="result hide-spite">';
+@@ -35,30 +32,6 @@
+ 
+     $defaultTopArray = ['wenda_abstract','biu_wenda_yunying', 'news', 'softbox', 'biu_softbox', 'newdict1', 'biu_hanyu_detail', 'baike_term_strong', 'medical_doc_answer_all', 'wenda_huabao', 'weather', '360shoutiao_AI'];
+ 
+-    $middleSuggestData = $_v_results['suggest']['data_middle'] ?? [];
+-    $hasMiddleSuggestData = !empty($middleSuggestData);
+-
+-    if ($origin_mid_sug) {
+-        // 原推荐: 普通浏览器
+-        $middle_suggest_pos = 4;
+-
+-        // 原推荐位置: 360系浏览器
+-        if ($hasMiddleSuggestData && isset($middleSuggestData['is_lm']) && (int)$middleSuggestData['is_lm'] === 1) {
+-            $middle_suggest_pos = 3;
+-        }
+-    }
+-
+-    // 中推排序实验, 优先级: 默认排序 < 动态排序 < 上移逻辑(onebox等)
+-    if ($hasMiddleSuggestData && !AbvModel::check(6384, 'cpc_middle2_2')) {
+-        $middle_suggest_pos = 1;
+-        $has_middle_rank = true;    // 提高onebox中推上移优先级
+-    }
+-
+-    // 首条官网下方展示AI Rec
+-    if (AbvModel::check(6377, 'cpc_airecom_3') && $_v_is_top_official) {
+-        $middle_suggest_pos = 3;
+-    }
+-
+     foreach ($last_results_items as $index => $item) {    
+         //高级搜索分隔
+         $item_ts = empty($item['timestamp']) ? 0 : (int)$item['timestamp'];
+@@ -103,9 +76,6 @@
+             $className .= ' referer-news-flow';
+             
+             if($pos == $_v_flow_data['position'] + 1){
+-                if (AbvModel::check(5095, 'test')) {
+-                    $html .= '<div id="ai-recommend-bottom" class="ai-recommend-bottom" data-disp-comm="ai-recommend-bottom"></div>';
+-                }
+                 $html .= '<li id="newsflow-toggle">';
+                 $html .= '<div class="g-more-fold"><span>展开更多搜索结果</span><i class="g-icon-arr-down"></i></div>';
+                 $html .= '<div class="g-more-fold g-more-unfold"><span>收起更多搜索结果</span><i class="g-icon-arr-up"></i></div>';
+@@ -130,20 +100,10 @@
+         $html .= '<li' . $kzx . ' class="res-list' . $className . '"'. $url_fp . '>';
+         $showUrlQueryTips = false;
+         $showTongZhanLink = false;
+-        $showAibox = false;
+         if ($item['from'] == 'onebox' || $item['from'] == 'richsum') {
+-            if(isset($item['type']) && in_array($item['type'], $defaultTopArray) && $index <= 2 && ($middle_suggest_pos === 'middle' || (($origin_mid_sug || $has_middle_rank) && !$is_middle_recommended))) {
+-                // 命中上移逻辑 互斥掉。 即llm_recommend_onebox_type为空 或 llm_recommend_onebox_type不为空，并且类型不等于需要上移的类型，才可以做上移。
+-                if(empty($_v_results['llm_recommend_onebox_type']) || (!empty($_v_results['llm_recommend_onebox_type']) && $_v_results['llm_recommend_onebox_type'] !== $item['type']) ){
+-                    $middle_suggest_pos = $index;
+-            }
+-            }
+-           
+-            // aibox情况下
+-            if (isset($item['type']) && $item['type'] == '360shoutiao_AI' && !empty($_v_results['suggest']['data_aibox'])){
+-                $showAibox = true;
+-                $middle_ci_suggest_pos = 2;
+-                $middle_suggest_pos = $index;
++            // 命中首条默认类型时，中推提升到第一条下方。
++            if ($pos === 1 && isset($item['type']) && in_array($item['type'], $defaultTopArray)) {
++                $middle_suggest_pos = $pos;
+             }
+             $html .=  $item['summary'];
+             $showUrlQueryTips = true;
+@@ -223,33 +183,20 @@
+             }
+         }
+ 
+-        if($showAibox && PlatInfoModel::isModuleAllowedForRendering('rec-middle') && PlatInfoModel::isModuleAllowedForRendering('recommend') && $_v_pn <= 5 && !empty($_v_results['suggest']) && !empty($_v_results['suggest']['data_aibox']) 
+-            && !empty($_v_results['suggest']['data_aibox']['list']) && !in_array('relatedSearch', $_v_risk_management_list) && count($_v_results['suggest']['data_aibox']['list']) > 2 && (empty($_v_sug_hide_conf) || empty($_v_sug_hide_conf['sug_middle']))){
+-            if(($middle_suggest_pos !== 'middle' && $index === $middle_suggest_pos)){
+-                $suggest_middle = $this->render(APPLICATION_PATH . "/application/views/index/inc/suggest_middle.php", array(
+-                       'data' => $_v_results['suggest'],
+-                       'fr' => $_v_fr,
+-                       'sid' => @$_v_results['sid'],
+-                       'site_rg' => $_v_site_rg,
+-                       'site_site' => $_v_site_site,
+-                       'site_inurl' => $_v_site_inurl,
+-                       'abv' => $_v_abv,
+-                       'ls' => $_v_ls,
+-                       'lmsid' => $_v_lmsid,
+-                       'lm_extend' => $_v_lm_extend,
+-                       'className' => $className,//$className 传className是为结果折叠使用，例如信息流折叠，电话折叠，风险折叠,
+-                       'showLess' => true,
+-                       'src' => 'related_middle_aibox',
+-                       'suggest_pos' => $middle_suggest_pos,
+-                       'aibox' => true,
+-                       'rank' => $index
+-                   ));
+-               $html .= $suggest_middle;
+-            }
+-        }else if(PlatInfoModel::isModuleAllowedForRendering('rec-middle') && !$is_middle_recommended &&PlatInfoModel::isModuleAllowedForRendering('recommend') && $_v_pn <= 5 && !empty($_v_results['suggest']) && !empty($_v_results['suggest']['data_middle']) 
+-            && isset($_v_results['suggest']['data_middle']['is_lm']) && in_array($_v_results['suggest']['data_middle']['is_lm'], [0,1])
+-            && !empty($_v_results['suggest']['data_middle']['list']) && !in_array('relatedSearch', $_v_risk_management_list) && (empty($_v_sug_hide_conf) || empty($_v_sug_hide_conf['sug_middle']))){
+-            if($_v_results['suggest']['data_middle']['is_lm'] == 0 && (($middle_suggest_pos === 'middle' && $index === 2) || ($middle_suggest_pos !== 'middle' && $index === $middle_suggest_pos))){ 
++        $middleSuggestData = $_v_results['suggest']['data_middle'] ?? [];
++        $canRenderMiddleSuggest = PlatInfoModel::isModuleAllowedForRendering('rec-middle')
++            && PlatInfoModel::isModuleAllowedForRendering('recommend')
++            && $_v_pn <= 5
++            && !empty($_v_results['suggest'])
++            && !empty($middleSuggestData)
++            && !empty($middleSuggestData['list'])
++            && !in_array('relatedSearch', $_v_risk_management_list)
++            && (empty($_v_sug_hide_conf) || empty($_v_sug_hide_conf['sug_middle']));
++        $shouldRenderMiddleSuggest = !$is_middle_recommended
++            && $canRenderMiddleSuggest
++            && $pos === $middle_suggest_pos;
++
++        if($shouldRenderMiddleSuggest){ 
+                 $suggest_middle = $this->render(APPLICATION_PATH . "/application/views/index/inc/suggest_middle.php", array(
+                     'data' => $_v_results['suggest'],
+                     'fr' => $_v_fr,
+@@ -262,34 +209,12 @@
+                     'lmsid' => $_v_lmsid,
+                     'lm_extend' => $_v_lm_extend,
+                     'className' => $className,//$className 传className是为结果折叠使用，例如信息流折叠，电话折叠，风险折叠,
+-                    'showLess' => !$origin_mid_sug && $index === 2 ? false : true,
+-                    'src' => $_v_results['suggest']['data_middle']['src'],
+-                    'suggest_pos' => $middle_suggest_pos,
+-                    'rank' => $index
+-                ));
+-                $is_middle_recommended = true;
+-                $html .= $suggest_middle;
+-            }else if($_v_results['suggest']['data_middle']['is_lm'] == 1 && !$is_middle_recommended &&(($middle_suggest_pos === 'middle' && $index === 2) || ($middle_suggest_pos !== 'middle' && $index === $middle_suggest_pos))){ 
+-                $suggest_middle = $this->render(APPLICATION_PATH . "/application/views/index/inc/suggest_middle.php", array(
+-                    'data' => $_v_results['suggest'],
+-                    'fr' => $_v_fr,
+-                    'sid' => @$_v_results['sid'],
+-                    'site_rg' => $_v_site_rg,
+-                    'site_site' => $_v_site_site,
+-                    'site_inurl' => $_v_site_inurl,
+-                    'abv' => $_v_abv,
+-                    'ls' => $_v_ls,
+-                    'lmsid' => $_v_lmsid,
+-                    'lm_extend' => $_v_lm_extend,
+-                    'className' => $className,//$className 传className是为结果折叠使用，例如信息流折叠，电话折叠，风险折叠
+-                    'src' => $_v_results['suggest']['data_middle']['src'],
+-                    'suggest_pos' => $middle_suggest_pos,
++                    'src' => $middleSuggestData['src'],
++                    'move_to_top' => $middle_suggest_pos === 1 ? true : false,
+                     'rank' => $index
+                 ));
+-
+                 $is_middle_recommended = true;
+                 $html .= $suggest_middle;
+-            }
+         }
+         
+         // 在第 $ad_middle_data['index'] 条结果下面插入middle类型广告
+diff --git a/application/views/index/inc/suggest_middle.php b/application/views/index/inc/suggest_middle.php
+index 5619262cd..9a646911b 100644
+--- a/application/views/index/inc/suggest_middle.php
++++ b/application/views/index/inc/suggest_middle.php
+@@ -1,7 +1,6 @@
+ <?php
+ 	$version = !empty($data['version']) ? $data['version'] : "";
+     $suggest_data = !empty($aibox) ? $data['data_aibox']['list'] : $data['data_middle']['list'];
+-    $is_inc = !empty($data['data_middle']['is_inc']) && AbvModel::check(5730, 'test') ? $data['data_middle']['is_inc'] : 0;
+     if (!empty($rec_ci) && $rec_ci) {
+         $suggest_data = $data['data_ci']['list'];
+     }
+@@ -55,7 +54,7 @@
+     if(empty($style)){
+         $style = '';
+     }
+-    $html .= '<div class="res-recommend-tag g-clearfix' . (!empty($showLess) && !$is_inc ? ' show-less' : '') . ' ' .$style .'" data-logmod="related_middle" data-type="' . ($suggest_pos === 'middle' ? 'middle' : 'middle2top') . '" data-disp="related_middle" data-ext="' . $ext . '" data-version="' . $version . '" data-ci="' . (!empty($rec_ci) && $rec_ci ? true : false) . '" data-rank="' .($rank + 1). '">';
++    $html .= '<div class="res-recommend-tag g-clearfix ' .$style .'" data-logmod="related_middle" data-type="' . ($move_to_top ? 'middle2top' : 'middle') . '" data-disp="related_middle" data-ext="' . $ext . '" data-version="' . $version . '" data-ci="' . (!empty($rec_ci) && $rec_ci ? true : false) . '" data-rank="' .($rank + 1). '">';
+     if(!empty($aibox)){
+         $html .= '<h3 class="title">更多AI相关问答</h3>';
+     }else{
+diff --git a/application/views/index/inc/top_rec.php b/application/views/index/inc/top_rec.php
+index 73ec0d82a..e7ec9dc6e 100644
+--- a/application/views/index/inc/top_rec.php
++++ b/application/views/index/inc/top_rec.php
+@@ -45,7 +45,7 @@ body.plat_guanjia #so-pdr-guide .so-pdr-bd {
+ 		<span class="so_feedback"><a href="javascript:;" class="so_feedback_link" data-class="so-pdr-bd"> · <span class="so_feedback_txt">反馈</span></a></span>
+ 		<?php } ?>
+ 	</dt>
+-	<dd class="so-pdr-bd <?php echo (AbvModel::check(5730,'test') && !empty($data['data_top']['is_inc']) && $data['data_top']['is_inc'] == 1) ? ' become-two-line' : ''; ?>">
++	<dd class="so-pdr-bd <?php echo (!empty($data['data_top']['is_inc']) && $data['data_top']['is_inc'] == 1) ? ' become-two-line' : ''; ?>">
+ 		<?php
+ 		if(!empty($data['data_top']['list']) && is_array($data['data_top']['list'])){
+             $ext = '';
+diff --git a/application/views/index/index.php b/application/views/index/index.php
+index 12b885371..fc4485363 100644
+--- a/application/views/index/index.php
++++ b/application/views/index/index.php
+@@ -325,11 +325,6 @@ if (!empty($_v_is_ai_searchbox) && PlatInfoModel::isModuleAllowedForRendering('h
+         echo $render_browser_err_btn;
+     ?>
+     </div>
+-    <?php
+-        if(AbvModel::check(5670, 'cpc_pos_1')) {
+-            echo $render_relative;
+-        }
+-    ?>
+     <div id="outer"></div>
+     <?php
+         if(!FrModel::is360AISOFr() && $_v_ctrl != 2) { echo $render_footer; }
+diff --git a/application/views/index/plat.php b/application/views/index/plat.php
+index f0a665aee..147154fb9 100644
+--- a/application/views/index/plat.php
++++ b/application/views/index/plat.php
+@@ -276,11 +276,6 @@ echo '<div id="moheBanner">' . $render_banner_onebox_nlp . '</div>';
+     echo $render_browser_err_btn;
+     ?>
+     </div>
+-    <?php
+-    if(AbvModel::check(5670, 'cpc_pos_1')) {
+-        echo $render_relative;
+-    }
+-    ?>
+     <div id="outer"></div>
+     <?php
+         if(!FrModel::is360AISOFr() && !empty($render_footer)) { echo $render_footer; }
+diff --git a/dev/result/ai-searchbox/App.vue b/dev/result/ai-searchbox/App.vue
+index e599b063a..2d9c8d76c 100644
+--- a/dev/result/ai-searchbox/App.vue
++++ b/dev/result/ai-searchbox/App.vue
+@@ -3,7 +3,6 @@
+     ref="inputRef"
+     :search-text="searchText"
+     :diwen-data="diwenData"
+-    :current-aitool="currentAITool"
+     :current-placeholder="currentPlaceholder"
+     :exclude-ask-ai-button="excludeAskAiButton"
+     :show-diwen="showDiwen"
+@@ -15,7 +14,6 @@
+     @expand-input="handleExpand"
+     @close-input="handleClose"
+     @delete-search-text="handleDeleteSearchText"
+-    @submit-aitool="handleAIToolSubmit"
+   />
+   <Suggest
+     :suggest-data="suggestData"
+@@ -44,7 +42,6 @@ import Input from "./components/input/input.vue";
+ import Suggest from "./components/suggest/suggest.vue";
+ import { suggestService } from "./services/suggestService.js";
+ import { submitService } from "./services/submitService.js";
+-import { aitoolService } from "./services/aitoolService.js";
+ import { logService } from "./services/logService.js";
+ 
+ // 实验控制版本
+@@ -71,7 +68,8 @@ const SUBMIT_TYPE = {
+ 
+   REPEAT_SUGGEST: "res-sug-rp", // 与搜索框内容相同的Suggest提交
+ 
+-  RICH_SUGGEST: "srp_suggst_right_nlp", // 富Suggest提交
++  RICH_SUGGEST: "srp_suggest_right_nlp", // 右侧card preview提交
++  ENTITY_SUGGEST: "srp_suggest_entity", // sugList中 card Suggest提交
+ };
+ 
+ const suggestData = ref({
+@@ -103,7 +101,6 @@ let suppressHoverItemTimeout = null;
+ const initialValue = inject("initialValue", ""); // 初始化值
+ const searchText = ref(initialValue); // 当前输入框显示的文本
+ const userInputText = ref(initialValue); // 用户实际输入的原始文本（用于键盘导航时恢复）
+-const currentAITool = ref(null); // 当前关联的AI工具
+ const currentPlaceholder = ref({ word: "", default: true }); // 当前placeholder
+ const submitType = ref(SUBMIT_TYPE.DEFAULT); // 提交类型
+ 
+@@ -177,11 +174,6 @@ const handleClose = () => {
+ 
+ // 清空按钮点击
+ const handleDeleteSearchText = () => {
+-  logService.log({
+-    mod: "placeholder",
+-    type: "show",
+-  });
+-
+   if (!isExpanded.value) {
+     suggestData.value = {
+       suggestions: [],
+@@ -196,32 +188,12 @@ const handleDeleteSearchText = () => {
+ 
+   searchText.value = "";
+   userInputText.value = "";
+-  currentAITool.value = null;
+   selectedIndex.value = -1;
+   handleUpdateSuggestList("", true).then(() => {
+     inputRef.value?.focusTextarea();
+   });
+ };
+ 
+-// ai工具提交打点
+-const logAIToolSubmit = ({ word, aitool, type }) => {
+-  logService.log({
+-    mod: "ai-tool",
+-    type: type,
+-    value: aitool,
+-    p1: word,
+-  });
+-};
+-
+-// submit提交打点
+-const logSubmit = ({ type }) => {
+-  logService.log({
+-    mod: "s_act",
+-    type: "click",
+-    p1: type,
+-  });
+-};
+-
+ // 更新Sug列表
+ const handleUpdateSuggestList = async (
+   text,
+@@ -264,6 +236,7 @@ const handleUpdateSuggestList = async (
+     // 更新底纹词列表
+     if (diwen?.result && showDiwen) {
+       diwenData.value = diwen;
++      logService.placeholder.show();
+     }
+ 
+     if (shouldBypassCache) {
+@@ -320,12 +293,14 @@ const handleKeyNavigate = (direction) => {
+     const selectedSuggestion =
+       suggestData.value.suggestions[selectedIndex.value];
+     searchText.value = selectedSuggestion.word;
+-    currentAITool.value = selectedSuggestion.aitool || null;
+     
+     switch (selectedSuggestion.type) {
+       case "history":
+         submitType.value = selectedSuggestion.firstsame ? SUBMIT_TYPE.REPEAT_SUGGEST : SUBMIT_TYPE.HISTORY;
+         break;
++      case "entity":
++        submitType.value = SUBMIT_TYPE.ENTITY_SUGGEST;
++        break;
+       default:
+         submitType.value = SUBMIT_TYPE.SUGGEST;
+         break;
+@@ -333,7 +308,6 @@ const handleKeyNavigate = (direction) => {
+   } else {
+     // 恢复原始输入
+     searchText.value = userInputText.value;
+-    currentAITool.value = null;
+     submitType.value = SUBMIT_TYPE.DEFAULT;
+   }
+ };
+@@ -357,12 +331,9 @@ const handleDeleteHistory = (suggestion) => {
+   submitService.removeStorage(suggestion.word);
+   shouldRefreshSuggestCacheAfterDelete.value = true;
+ 
+-  // 打点
+-  const logParams = {
++  logService.suggest.log({
+     type: searchText.value.trim() ? "typing-sug-dele" : "sug-dele",
+-    mod: "suggest-log",
+-  };
+-  logService.log(logParams);
++  });
+ 
+   const suggestions = suggestData.value.suggestions || [];
+   const deleteIndex = suggestions.findIndex(
+@@ -379,7 +350,6 @@ const handleDeleteHistory = (suggestion) => {
+     if (selectedIndex.value === deleteIndex) {
+       selectedIndex.value = -1;
+       searchText.value = userInputText.value;
+-      currentAITool.value = null;
+     } else if (selectedIndex.value > deleteIndex) {
+       selectedIndex.value = selectedIndex.value - 1;
+     }
+@@ -398,15 +368,8 @@ const handleEdit = () => {
+   isEdit.value = !isEdit.value;
+ };
+ 
+-// 处理AI工具提交
+-const handleAIToolSubmit = ({ type }) => {
+-  const submitText = searchText.value.trim();
+-  logAIToolSubmit({ word: submitText, aitool: type, type: "click" });
+-  aitoolService.submitAndOpen({ query: submitText, type: type, params: { src: "so_result_search", srcg: "so_result_search" } });
+-};
+-
+ // 处理搜索提交
+-const handleSubmit = ({ type }) => {
++const handleSubmit = () => {
+   let submitWord = searchText.value.trim();
+ 
+   // 判断是否使用placeholder
+@@ -421,29 +384,14 @@ const handleSubmit = ({ type }) => {
+     }
+   }
+ 
+-  if (type) {
+-    logSubmit({ type });
+-  }
+-
+-  // 执行提交
+-  if (currentAITool.value) {
+-    logAIToolSubmit({
+-      word: submitWord,
+-      aitool: currentAITool.value,
+-      type: "suggest",
+-    });
+-    aitoolService.submitAndOpen({ query: submitWord, type: currentAITool.value, params: { src: "reg-sug-ai-nav", srcg: "so" } });
+-  } else {
+-    submitService.submitForm(submitWord, {
+-      src: submitType.value,
+-      ...submitParams.value,
+-    });
+-    handleClose();
+-  }
++  submitService.submitForm(submitWord, {
++    src: submitType.value,
++    ...submitParams.value,
++  });
++  handleClose();
+ 
+   // 重置状态
+   submitType.value = SUBMIT_TYPE.DEFAULT;
+-  currentAITool.value = null;
+ 
+   inputRef.value?.blurTextarea();
+ };
+@@ -458,14 +406,13 @@ const handleSuggestSubmit = (suggestion) => {
+   // 更新搜索框状态
+   searchText.value = suggestion.word;
+   userInputText.value = suggestion.word;
+-  currentAITool.value = suggestion.aitool || null;
+ 
+   switch (suggestion.type) {
+     case "history":
+       submitType.value = suggestion.firstsame ? SUBMIT_TYPE.REPEAT_SUGGEST : SUBMIT_TYPE.HISTORY;
+       break;
+     case "entity":
+-      submitType.value = SUBMIT_TYPE.SUGGEST;
++      submitType.value = SUBMIT_TYPE.ENTITY_SUGGEST;
+       break;
+     default:
+       submitType.value = SUBMIT_TYPE.SUGGEST;
+@@ -473,7 +420,7 @@ const handleSuggestSubmit = (suggestion) => {
+   }
+ 
+   // 执行提交
+-  handleSubmit({ type: "sug" });
++  handleSubmit();
+ };
+ 
+ // 处理预览点击
+@@ -481,7 +428,7 @@ const handlePreviewClick = (suggestion) => {
+   searchText.value = suggestion.word;
+   userInputText.value = suggestion.word;
+   submitType.value = SUBMIT_TYPE.RICH_SUGGEST;
+-  handleSubmit({ type: "rich_sug" });
++  handleSubmit();
+   handleClose();
+ };
+ 
+@@ -499,17 +446,8 @@ const handleEntityCardHide = () => {
+ 
+ // 用户输入时触发
+ const handleInputChange = (text) => {
+-  // 输入框为空时, palceholder曝光打点
+-  if (!text.trim()) {
+-    logService.log({
+-      mod: "placeholder",
+-      type: "show",
+-    });
+-  }
+-  
+   searchText.value = text; // 更新显示的文本
+   userInputText.value = text; // 记录用户输入的原始文本
+-  currentAITool.value = null; // 清除 AI 工具标记
+   selectedIndex.value = SELECTED_INDEX_DEFAULT; // 重置选中索引
+   submitType.value = SUBMIT_TYPE.DEFAULT; // 重置为默认提交类型
+   handleUpdateSuggestList(text, true);
+@@ -538,7 +476,6 @@ const handleHistoryStateChange = () => {
+ 
+   if (state.q) {
+     searchText.value = state.q;
+-    currentAITool.value = null;
+     selectedIndex.value = SELECTED_INDEX_DEFAULT;
+   }
+ };
+@@ -548,7 +485,6 @@ const updateSearchText = (text) => {
+   const trimmedText = text?.trim() || "";
+   searchText.value = trimmedText;
+   userInputText.value = trimmedText;
+-  currentAITool.value = null;
+   selectedIndex.value = SELECTED_INDEX_DEFAULT;
+   submitType.value = SUBMIT_TYPE.DEFAULT;
+   handleClose();
+diff --git a/dev/result/ai-searchbox/components/icons/AiToolsIcon.vue b/dev/result/ai-searchbox/components/icons/AiToolsIcon.vue
+deleted file mode 100644
+index 8c88333e8..000000000
+--- a/dev/result/ai-searchbox/components/icons/AiToolsIcon.vue
++++ /dev/null
+@@ -1,133 +0,0 @@
+-<template>
+-  <svg
+-    xmlns="http://www.w3.org/2000/svg"
+-    width="16"
+-    height="16"
+-    viewBox="0 0 16 16"
+-    fill="none"
+-  >
+-    <g clip-path="url(#clip0_7703_9585)">
+-      <g filter="url(#filter0_ii_7703_9585)">
+-        <path
+-          d="M7.04449 0.991788C7.41582 0.090141 8.72624 0.198848 8.94391 1.14936L9.63504 4.1672C9.89612 5.3072 10.6682 6.26316 11.7277 6.75831L14.0037 7.82198C14.8447 8.21501 14.7429 9.44219 13.8487 9.69127L11.3243 10.3944C10.2573 10.6916 9.3733 11.4401 8.90432 12.4436L7.79488 14.8176C7.40185 15.6586 6.17468 15.5568 5.9256 14.6625L5.2225 12.1382C4.92529 11.0711 4.17674 10.1872 3.17323 9.71818L0.799263 8.60875C-0.041741 8.21571 0.0600583 6.98854 0.954329 6.73946L3.37452 6.06537C4.50115 5.75157 5.42019 4.93589 5.86554 3.8545L7.04449 0.991788Z"
+-          fill="url(#paint0_linear_7703_9585)"
+-        />
+-      </g>
+-      <g filter="url(#filter1_i_7703_9585)">
+-        <path
+-          d="M13.5813 0.185208C13.6672 -0.0215901 13.9678 0.00334735 14.0184 0.221473L14.3058 1.45907C14.362 1.70119 14.5268 1.90385 14.7523 2.00832L15.7266 2.45961C15.9214 2.54982 15.8978 2.8339 15.6909 2.89079L14.6332 3.1815C14.4063 3.24387 14.2179 3.40226 14.1176 3.61511L13.6513 4.604C13.5604 4.79673 13.2791 4.77339 13.2212 4.56832L12.9242 3.51611C12.8603 3.28963 12.7007 3.10238 12.4871 3.00347L11.4918 2.54246C11.2971 2.45225 11.3206 2.16816 11.5276 2.11127L12.5629 1.8267C12.8026 1.76082 12.9985 1.58808 13.0939 1.35853L13.5813 0.185208Z"
+-          fill="#7FB0FF"
+-        />
+-      </g>
+-      <path
+-        d="M1.84942 11.8131C1.91127 11.6186 2.18648 11.6186 2.24833 11.8131L2.57549 12.8419C2.6439 13.057 2.80766 13.2285 3.01936 13.3069L3.86954 13.6215C4.05175 13.6889 4.05175 13.9466 3.86954 14.0141L2.99979 14.3359C2.79928 14.4101 2.64119 14.5682 2.567 14.7687L2.24516 15.6384C2.17774 15.8206 1.92001 15.8206 1.85259 15.6384L1.53075 14.7687C1.45656 14.5682 1.29847 14.4101 1.09796 14.3359L0.228213 14.0141C0.0459968 13.9466 0.0459969 13.6889 0.228213 13.6215L1.07839 13.3069C1.29009 13.2285 1.45385 13.057 1.52226 12.8419L1.84942 11.8131Z"
+-        fill="#465CFF"
+-      />
+-    </g>
+-    <defs>
+-      <filter
+-        id="filter0_ii_7703_9585"
+-        x="-1.77734"
+-        y="-0.627563"
+-        width="16.3579"
+-        height="17.022"
+-        filterUnits="userSpaceOnUse"
+-        color-interpolation-filters="sRGB"
+-      >
+-        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+-        <feBlend
+-          mode="normal"
+-          in="SourceGraphic"
+-          in2="BackgroundImageFix"
+-          result="shape"
+-        />
+-        <feColorMatrix
+-          in="SourceAlpha"
+-          type="matrix"
+-          values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+-          result="hardAlpha"
+-        />
+-        <feOffset dy="-1" />
+-        <feGaussianBlur stdDeviation="1" />
+-        <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1" />
+-        <feColorMatrix
+-          type="matrix"
+-          values="0 0 0 0 0.769374 0 0 0 0 0.553627 0 0 0 0 1 0 0 0 0.3 0"
+-        />
+-        <feBlend
+-          mode="normal"
+-          in2="shape"
+-          result="effect1_innerShadow_7703_9585"
+-        />
+-        <feColorMatrix
+-          in="SourceAlpha"
+-          type="matrix"
+-          values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+-          result="hardAlpha"
+-        />
+-        <feOffset dx="-3" dy="1" />
+-        <feGaussianBlur stdDeviation="1" />
+-        <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1" />
+-        <feColorMatrix
+-          type="matrix"
+-          values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.5 0"
+-        />
+-        <feBlend
+-          mode="normal"
+-          in2="effect1_innerShadow_7703_9585"
+-          result="effect2_innerShadow_7703_9585"
+-        />
+-      </filter>
+-      <filter
+-        id="filter1_i_7703_9585"
+-        x="11.3584"
+-        y="-0.0719771"
+-        width="4.50195"
+-        height="4.80818"
+-        filterUnits="userSpaceOnUse"
+-        color-interpolation-filters="sRGB"
+-      >
+-        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+-        <feBlend
+-          mode="normal"
+-          in="SourceGraphic"
+-          in2="BackgroundImageFix"
+-          result="shape"
+-        />
+-        <feColorMatrix
+-          in="SourceAlpha"
+-          type="matrix"
+-          values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+-          result="hardAlpha"
+-        />
+-        <feOffset dy="-0.11519" />
+-        <feGaussianBlur stdDeviation="0.172785" />
+-        <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1" />
+-        <feColorMatrix
+-          type="matrix"
+-          values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.84 0"
+-        />
+-        <feBlend
+-          mode="normal"
+-          in2="shape"
+-          result="effect1_innerShadow_7703_9585"
+-        />
+-      </filter>
+-      <linearGradient
+-        id="paint0_linear_7703_9585"
+-        x1="10.0002"
+-        y1="1.00012"
+-        x2="7.02125"
+-        y2="15.6064"
+-        gradientUnits="userSpaceOnUse"
+-      >
+-        <stop stop-color="#008CF8" />
+-        <stop offset="0.50122" stop-color="#3760F0" />
+-        <stop offset="0.999443" stop-color="#5E00FF" />
+-      </linearGradient>
+-      <clipPath id="clip0_7703_9585">
+-        <rect width="16" height="16" fill="white" />
+-      </clipPath>
+-    </defs>
+-  </svg>
+-</template>
+diff --git a/dev/result/ai-searchbox/components/icons/BaseIcon.vue b/dev/result/ai-searchbox/components/icons/BaseIcon.vue
+index 4469effe3..6f22f23fe 100644
+--- a/dev/result/ai-searchbox/components/icons/BaseIcon.vue
++++ b/dev/result/ai-searchbox/components/icons/BaseIcon.vue
+@@ -11,7 +11,6 @@ import IconTranslate from "./IconTranslate.vue";
+ import IconDelete from "./IconDelete.vue";
+ import IconSearch from "./IconSearch.vue";
+ import StarIcon from "./StarIcon.vue";
+-import AiToolsIcon from "./AiToolsIcon.vue";
+ import History from "./History.vue";
+ import SugSearchIcon from "./sugSearchIcon.vue";
+ 
+@@ -20,7 +19,7 @@ const props = defineProps({
+     type: String,
+     required: true,
+     validator: (value) =>
+-      ["write", "images", "ppt", "translate", "delete", "search", "star", "aitools", "history", "sugSearch"].includes(
++      ["write", "images", "ppt", "translate", "delete", "search", "star", "history", "sugSearch"].includes(
+         value
+       ),
+   },
+@@ -34,7 +33,6 @@ const iconMap = {
+   delete: IconDelete,
+   search: IconSearch,
+   star: StarIcon,
+-  aitools: AiToolsIcon,
+   history: History,
+   sugSearch: SugSearchIcon,
+ };
+diff --git a/dev/result/ai-searchbox/components/input/components/input-actions.vue b/dev/result/ai-searchbox/components/input/components/input-actions.vue
+index bb48c2f18..3eb9fe107 100644
+--- a/dev/result/ai-searchbox/components/input/components/input-actions.vue
++++ b/dev/result/ai-searchbox/components/input/components/input-actions.vue
+@@ -1,7 +1,8 @@
+ <template>
+   <div class="ai-input-actions" @mousedown.prevent @click.stop>
+     <div v-if="!props.excludeAskAiButton" class="left-actions">
+-      <div v-for="tool in aiTools" :key="tool.type" class="left-item" @click="handleClick(tool.type)">
++      <!-- TODO: AITOOLS 相关按钮, 目前已经全部下线, 此部分代码保留, 后续如果有需要可以恢复 -->
++      <div v-for="tool in aiTools" :key="tool.type" class="left-item" @click="$emit('submit-aitool', { type: tool.type })">
+         <div class="left-item-icon">
+           <BaseIcon :name="tool.icon" />
+         </div>
+@@ -50,13 +51,4 @@ const isEmpty = computed(() => !props.searchText);
+ const aiTools = [
+   { type: "aitools", icon: "aitools", label: "问AI" },
+ ];
+-
+-
+-const handleClick = (type) => {
+-  // 处理 AI 功能点击
+-  emit("submit-aitool", {
+-    type,
+-  });
+-};
+-
+ </script>
+\ No newline at end of file
+diff --git a/dev/result/ai-searchbox/components/input/input.vue b/dev/result/ai-searchbox/components/input/input.vue
+index bf8057dcb..d26016efe 100644
+--- a/dev/result/ai-searchbox/components/input/input.vue
++++ b/dev/result/ai-searchbox/components/input/input.vue
+@@ -20,7 +20,6 @@
+       :placeholder="props.currentPlaceholder"
+       @submit="$emit('submit', $event)"
+       @delete="$emit('delete-search-text')"
+-      @submit-aitool="$emit('submit-aitool', $event)"
+     />
+   </div>
+ </template>
+@@ -39,10 +38,6 @@ const props = defineProps({
+     type: Object,
+     default: () => ({}),
+   },
+-  currentAitool: {
+-    type: String,
+-    default: null,
+-  },
+   currentPlaceholder: {
+     type: Object,
+     default: () => ({ word: "", default: true }),
+@@ -65,7 +60,6 @@ const emit = defineEmits([
+   "close-input",
+   "delete-search-text",
+   "request-suggest",
+-  "submit-aitool",
+   "placeholder-change",
+ ]);
+ 
+diff --git a/dev/result/ai-searchbox/components/suggest/components/AIToolTag.vue b/dev/result/ai-searchbox/components/suggest/components/AIToolTag.vue
+deleted file mode 100644
+index 31d33b4e3..000000000
+--- a/dev/result/ai-searchbox/components/suggest/components/AIToolTag.vue
++++ /dev/null
+@@ -1,24 +0,0 @@
+-<template>
+-  <span class="ai-suggest-item-aitool">
+-    用<BaseIcon name="star" class="ai-suggest-item-aitool-icon" />AI{{ toolLabel }}
+-  </span>
+-</template>
+-
+-<script setup>
+-import { computed } from "vue";
+-import BaseIcon from "../../icons/BaseIcon.vue";
+-import AIToolService from "../../../services/aitoolService.js";
+-
+-const props = defineProps({
+-  type: {
+-    type: String,
+-    required: true,
+-    validator: (value) => ["images", "write", "ppt", "translate"].includes(value),
+-  },
+-});
+-
+-const toolLabel = computed(() => {
+-  return AIToolService.TOOL_LABELS[props.type] || "";
+-});
+-</script>
+-
+diff --git a/dev/result/ai-searchbox/components/suggest/suggest.vue b/dev/result/ai-searchbox/components/suggest/suggest.vue
+index 2d271908f..501d5f005 100644
+--- a/dev/result/ai-searchbox/components/suggest/suggest.vue
++++ b/dev/result/ai-searchbox/components/suggest/suggest.vue
+@@ -39,7 +39,7 @@
+             { 'firstsame-suggest': suggestion.firstsame },
+             { 'entity-suggest': suggestion.type === 'entity' && props.isSuperVersion },
+           ]"
+-          @click="handleSuggestionClick({ suggestion, value: index + 1 })"
++          @click="handleSuggestionClick(suggestion, index)"
+           @mouseenter="handleListMouseEnter(index)"
+         >
+           <span class="ai-suggest-item-content">
+@@ -49,6 +49,7 @@
+                 class="ai-suggest-item-entity-image"
+                 :src="suggestion.entity.image"
+                 :alt="suggestion.word || ''"
++                @load="handleEntityListImageLoad(suggestion, index)"
+               />
+               <span class="ai-suggest-item-entity-meta">
+                 <span class="ai-suggest-item-entity-word">
+@@ -82,9 +83,8 @@
+                 v-if="suggestion.face"
+                 class="ai-suggest-item-face"
+                 :src="suggestion.face"
+-                alt=""
++                @load="handleFaceDisp(suggestion, index)"
+               />
+-              <AIToolTag v-if="suggestion.aitool" :type="suggestion.aitool" />
+             </template>
+           </span>
+ 
+@@ -150,7 +150,7 @@
+         >
+       </div>
+       <div v-else class="ai-suggest-feedback">
+-        <span class="ai-suggest-feedback-text" @click="handleEdit">{{
++        <span class="ai-suggest-feedback-text" @click="$emit('edit')">{{
+           props.isEdit ? "取消" : "反馈"
+         }}</span>
+       </div>
+@@ -160,7 +160,6 @@
+ </template>
+ 
+ <script setup>
+-import AIToolTag from "./components/AIToolTag.vue";
+ import { computed, watch, ref, onUnmounted, nextTick } from "vue";
+ import { logService } from "../../services/logService.js";
+ import BaseIcon from "../icons/BaseIcon.vue";
+@@ -168,6 +167,7 @@ import { escapeHtml } from "../../utils.js";
+ 
+ const ENTITY_CARD_CHANGE_THRESHOLD = 300; // 实体卡片切换防抖（ms）
+ let entityCardChangeTimeout = null;
++const pendingLogs = [];
+ 
+ const props = defineProps({
+   suggestData: {
+@@ -285,6 +285,13 @@ const selectedEntitySuggestion = computed(() => {
+   const selectedSuggestion = suggestions[entityCardChangeIndex.value];
+ 
+   if (isEntityCardSuggestion(selectedSuggestion)) {
++    if (props.isExpanded) {
++      logPreviewPanelShow(selectedSuggestion);
++    } else {
++      pendingLogs.push(() => {
++        logPreviewPanelShow(selectedSuggestion);
++      });
++    }
+     return selectedSuggestion;
+   }
+ 
+@@ -355,8 +362,8 @@ onUnmounted(() => {
+   clearEntityCardChangeTimeout();
+ });
+ 
+-const handleSuggestionClick = ({ suggestion, value }) => {
+-  logSugClick({ suggestion, value });
++const handleSuggestionClick = (suggestion, index) => {
++  logSugClick(suggestion, index);
+   emit("suggest-submit", suggestion);
+ };
+ 
+@@ -422,13 +429,10 @@ const handleDeleteAllHistory = () => {
+   emit("delete-all-history");
+ };
+ 
+-const handleEdit = () => {
+-  emit("edit");
+-};
+-
+ const handlePreviewClick = () => {
+   const suggestion = selectedEntitySuggestion.value;
+   if (!suggestion) return;
++  logPreviewPanelClick(suggestion);
+   emit("preview-click", suggestion);
+ };
+ 
+@@ -450,53 +454,100 @@ const highlightPrefix = (word) => {
+   return escapedWord;
+ };
+ 
+-// Sug列表曝光打点
+-const logSugDisp = (suggestions) => {
+-  if (!suggestions?.length) return;
+-
+-  suggestions.forEach((item, index) => {
+-    if (item.face) {
+-      logService.log({
+-        mod: "sug-hot-icon",
+-        type: "moni-show",
+-        value: index + 1,
+-        p1: item.word,
+-      });
+-    }
++const handleEntityListImageLoad = (suggestion, index) => {
++  if (!props.isSuperVersion) return;
++  
++  if (
++    !suggestion ||
++    suggestion.type !== "entity" ||
++    !suggestion.entity?.image
++  ) {
++    return;
++  }
+ 
+-    if (item.aitool) {
+-      logService.log({
+-        mod: "ai-tool",
+-        type: "show",
+-        value: item.aitool,
+-        p1: item.word,
+-        p2: index + 1,
+-      });
+-    }
+-  });
++  logSugDisp(suggestion, index);
+ };
+ 
+-watch(
+-  () => props.suggestData.suggestions,
+-  (newVal) => {
+-    if (newVal?.length) {
+-      logSugDisp(newVal);
+-    }
+-  }
+-);
++const handleFaceDisp = (suggestion, index) => {
++  if (!suggestion || !suggestion?.face) return;
++
++  logSugDisp(suggestion, index);
++};
+ 
+ // Sug列表点击打点
+-const logSugClick = ({ suggestion, value }) => {
++const logSugClick = (suggestion, index) => {
+   if (!suggestion?.word) return;
+ 
+   // 带热icon的点击打点
+   if (suggestion.face) {
+-    logService.log({
+-      mod: "sug-hot-icon",
+-      type: "click",
+-      value: value,
++    logService.suggest.click({
++      type: "face-click",
++      value: index + 1,
++      p1: suggestion.word,
++    });
++  }
++
++  // entity 点击打点
++  if (suggestion.type === "entity") {
++    logService.suggest.log({
++      type: "entity-click",
++      value: index + 1,
+       p1: suggestion.word,
+     });
+   }
+ };
++
++// Sug列表曝光打点
++const logSugDisp = (suggestion, index) => {
++  if (!suggestion?.word) return;
++
++  // 带热icon的曝光打点
++  if (suggestion.face) {
++    pendingLogs.push(() => {
++      logService.suggest.log({
++        type: "face-show",
++        value: index + 1,
++        p1: suggestion.word,
++      });
++    });
++  }
++
++  // entity 曝光打点
++  if (suggestion.type === "entity") {
++    pendingLogs.push(() => {
++      logService.suggest.log({
++        type: "entity-show",
++        value: index + 1,
++        p1: suggestion.word,
++      });
++    });
++  }
++
++  if (pendingLogs.length > 0 && props.isExpanded) {
++    pendingLogs.forEach((log) => log());
++    pendingLogs.length = 0;
++  }
++};
++
++watch(() => props.isExpanded, (newVal) => {
++  if (newVal) {
++    pendingLogs.forEach((log) => log());
++    pendingLogs.length = 0;
++  }
++}, { immediate: true });
++
++// 右侧preview panel 打点
++const logPreviewPanelClick = (suggestion) => {
++  logService.preview.click({
++    type: "preview-click",
++    p1: suggestion.word,
++  });
++};
++
++const logPreviewPanelShow = (suggestion) => {
++  logService.preview.show({
++    type: "preview-show",
++    p1: suggestion.word,
++  });
++};
+ </script>
+diff --git a/dev/result/ai-searchbox/services/aitoolService.js b/dev/result/ai-searchbox/services/aitoolService.js
+deleted file mode 100644
+index d7fa8b588..000000000
+--- a/dev/result/ai-searchbox/services/aitoolService.js
++++ /dev/null
+@@ -1,123 +0,0 @@
+-class AIToolService {
+-  static API_PREFIX = {
+-    images: "https://image.so.com", // 绘图
+-    ppt: "https://aippt.360.com", // PPT
+-    write: "https://wenku.so.com/xie", // 写作
+-    translate: "https://fanyi.so.com", // 翻译
+-    aitools: "https://ai.so.com/search", // 问AI
+-  };
+-
+-  static TOOL_LABELS = {
+-    images: "生图",
+-    ppt: "做PPT",
+-    write: "写作",
+-    translate: "翻译",
+-    aitools: "问AI",
+-  };
+-
+-  constructor() {
+-    this.imagesBaseUrl = AIToolService.API_PREFIX.images;
+-    this.pptBaseUrl = AIToolService.API_PREFIX.ppt;
+-    this.writeBaseUrl = AIToolService.API_PREFIX.write;
+-    this.translateBaseUrl = AIToolService.API_PREFIX.translate;
+-    this.aitoolsBaseUrl = AIToolService.API_PREFIX.aitools;
+-  }
+-
+-  // 构建URL
+-  buildUrl({ query = "", type = "", params = {} }) {
+-    switch (type) {
+-      case "images":
+-        return this.buildImagesUrl(query, params);
+-      case "translate":
+-        return this.buildTranslateUrl(query, params);
+-      case "write":
+-        return this.buildWriteUrl(query, params);
+-      case "ppt":
+-        return this.buildPptUrl(query, params);
+-      case "aitools":
+-        return this.buildAitoolsUrl(query, params);
+-      default:
+-        return null;
+-    }
+-  }
+-
+-  // 构建绘图URL
+-  buildImagesUrl(query, params = {}) {
+-    params.q = query;
+-    const url = new URL(this.imagesBaseUrl);
+-    url.pathname = '/ai/generate';
+-    url.search = new URLSearchParams(params).toString();
+-    return url.toString();
+-  }
+-
+-  // 构建翻译URL
+-  buildTranslateUrl(query, params = {}) {
+-    params.type = 'auto';
+-    const url = new URL(this.translateBaseUrl);
+-    url.pathname = '/';
+-    url.search = new URLSearchParams(params).toString();
+-    url.hash = encodeURIComponent(query);
+-    return url.toString();
+-  }
+-
+-  // 构建写作URL
+-  buildWriteUrl(query, params = {}) {
+-    params.q = query;
+-    params.genreId = "3213814635296a7ffa33906dc1c197c6";
+-    const url = new URL(this.writeBaseUrl);
+-    url.pathname = '/';
+-    url.search = new URLSearchParams(params).toString();
+-    return url.toString();
+-  }
+-
+-  // 构建PPT URL
+-  buildPptUrl(query, params = {}) {
+-    params.opage = params.page || "middle";
+-    params.page = "generate";
+-    params.mod = 'phrase';
+-    params.title = query;
+-    const url = new URL(this.pptBaseUrl);
+-    url.pathname = '/aippt';
+-    url.search = new URLSearchParams(params).toString();
+-    return url.toString();
+-  }
+-
+-  // 构建问AI URL
+-  buildAitoolsUrl(query, params = {}) {
+-    params.search = query;
+-    const url = new URL(this.aitoolsBaseUrl);
+-    url.search = new URLSearchParams(params).toString();
+-    return url.toString();
+-  }
+-
+-  // 统一提交入口
+-  submit({ query = "", type = "", params = {} }) {
+-    if (!query || !query.trim()) {
+-      const url = new URL(AIToolService.API_PREFIX[type]);
+-      url.search = new URLSearchParams(params).toString();
+-      return url.toString();
+-    }
+-
+-    return this.buildUrl({ query, type, params });
+-  }
+-
+-  // 打开新标签页
+-  openInNewTab(url) {
+-    if (url) {
+-      window.open(url, "_blank");
+-    }
+-  }
+-
+-  // 提交并打开新标签页
+-  submitAndOpen({ query = "", type = "", params = {} }) {
+-    const url = this.submit({ query, type, params });
+-    if (url) {
+-      this.openInNewTab(url);
+-    }
+-  }
+-}
+-
+-export default AIToolService;
+-
+-const aitoolService = new AIToolService();
+-export { aitoolService };
+diff --git a/dev/result/ai-searchbox/services/logService.js b/dev/result/ai-searchbox/services/logService.js
+index 15be1d07e..920cef0ef 100644
+--- a/dev/result/ai-searchbox/services/logService.js
++++ b/dev/result/ai-searchbox/services/logService.js
+@@ -1,30 +1,71 @@
+ class LogService {
+-  /**
+-   * 推荐接口打点模块名
+-   * 1. suggest-log
+-   * 2. sug-hot-icon
+-   */
+   static MODULE_NAME = {
+     SUGGEST_LOG: 'suggest-log',
+-    SUG_HOT_ICON: 'sug-hot-icon',
++    PLACEHOLDER: 'placeholder',
++    RICH_PREVIEW: 'rich-preview',
++  };
++
++  /**
++   * 常用模块别名，供外部使用：
++   */
++  static MODULE_ALIAS = {
++    placeholder: LogService.MODULE_NAME.PLACEHOLDER,
++    suggest: LogService.MODULE_NAME.SUGGEST_LOG,
++    preview: LogService.MODULE_NAME.RICH_PREVIEW,
++  };
++
++  static LOG_TYPE = {
++    CLICK: 'click',
++    SHOW: 'disp',
+   };
+ 
+   constructor() {
+     this.log = this.log.bind(this);
++    this.createModuleLogger = this.createModuleLogger.bind(this);
++    this.getModule = this.getModule.bind(this);
++
++    Object.entries(LogService.MODULE_ALIAS).forEach(([alias, mod]) => {
++      this[alias] = this.createModuleLogger(mod);
++    });
+   }
+ 
+-  /**
+-   * 通用打点方法
+-   * @param {String} mod 模块名
+-   * @param {Object} args Key/Value对的打点参数，通过 type 字段区分点击(click)/曝光(disp)等
+-   * @param {String} gifPath gif路径，默认为 'so/click'
+-   * @param {String} fullpath 完整路径
+-   */
++  // 通用打点方法
+   log({ mod, ...args }, gifPath = 'so/click', fullpath = '') {
+-    if (So && So.lib && So.lib.log) {
++    if (typeof So !== 'undefined' && So.lib && So.lib.log) {
+       So.lib.log(mod, args, gifPath, fullpath);
+     }
+   }
++
++  /**
++   * 创建模块级打点方法：
++   * click -> type: click
++   * show -> type: disp
++   */
++  createModuleLogger(mod) {
++    return {
++      click: (args = {}, gifPath = 'so/click', fullpath = '') => this.log({
++        mod,
++        type: LogService.LOG_TYPE.CLICK,
++        ...args,
++      }, gifPath, fullpath),
++      show: (args = {}, gifPath = 'so/click', fullpath = '') => this.log({
++        mod,
++        type: LogService.LOG_TYPE.SHOW,
++        ...args,
++      }, gifPath, fullpath),
++      log: (args = {}, gifPath = 'so/click', fullpath = '') => this.log({
++        mod,
++        ...args,
++      }, gifPath, fullpath),
++    };
++  }
++
++  /**
++   * 获取任意模块打点器，便于未预置模块快速接入
++   */
++  getModule(mod) {
++    return this.createModuleLogger(mod);
++  }
+ }
+ 
+ export default LogService;
+diff --git a/dev/result/ai-searchbox/services/suggestService.js b/dev/result/ai-searchbox/services/suggestService.js
+index 5c5c889a8..c494c7239 100644
+--- a/dev/result/ai-searchbox/services/suggestService.js
++++ b/dev/result/ai-searchbox/services/suggestService.js
+@@ -105,6 +105,8 @@ class SuggestService {
+           pq: this.getUserPq(),
+           cursrc: this.getUserCursrc(),
+           llbq: this.getUserLlbq(),
++          superSug: 1,
++
+ 
+           firstsame: firstsame
+         });
+@@ -299,7 +301,6 @@ class SuggestService {
+           needPreLoad: item.needPreLoad || "0",
+           type: item.t === "his" ? "history" : "personal",
+           id: item.id || "",
+-          aitool: item.aitool || "",
+         });
+       });
+     }
+@@ -393,7 +394,6 @@ class SuggestService {
+               ? "entity"
+               : item.type || "personal",
+           id: item.id || "",
+-          aitool: item.aitool || "",
+           firstsame: firstsame && index === 0,
+           entity: parsedEntity,
+         };
+diff --git a/resource/css/ask_ai.css b/resource/css/ask_ai.css
+index 0243441af..0aed3eca2 100644
+--- a/resource/css/ask_ai.css
++++ b/resource/css/ask_ai.css
+@@ -174,15 +174,6 @@ body.animated-header #tabs-wrap #g-hd-tabs a {
+   animation: animated-header-nav-in 120ms ease-out 120ms both;
+ }
+ 
+-body.animated-header #tabs-wrap #g-hd-tabs a[data-i="ai_ask"] {
+-  background: linear-gradient(273deg, #892EFF -50.52%, #2E51FF 73.88%);
+-  background-clip: text;
+-  -webkit-background-clip: text;
+-  -webkit-text-fill-color: transparent;
+-  color: transparent;
+-  font-weight: 500;
+-}
+-
+ body.animated-header #tabs-wrap #g-hd-tabs a[data-i="web_page"] {
+   color: #333;
+   font-weight: 500;
+diff --git a/resource/css/index.css b/resource/css/index.css
+index 1df1c9554..4d86e8a4f 100644
+--- a/resource/css/index.css
++++ b/resource/css/index.css
+@@ -330,18 +330,12 @@
+     object-position: 0 -28px;
+ }
+ 
+-.res-recommend-tag .button-wrap a,
+ .res-recommend-tag .button-wrap a {
+     font-size: 14px;
+     line-height: 32px;
+     height: 32px;
+ }
+ 
+-.res-recommend-tag .button-wrap,
+-.res-recommend-tag .button-wrap {
+-    max-height: 116px;
+-}
+-
+ /*顶部相关推荐*/
+ #rs-top{display:block;width:590px;height:25px;line-height:22px;position:relative;font-size: 13px;line-height: 1.5em;margin-bottom: 15px;margin-top: 0;overflow:hidden;}
+ #rs-top dt, #head_rs_top dt{color:#666666;float:left;font-weight:normal;}
+@@ -519,9 +513,6 @@ div.warning_custom_left[data-logmod="warn_custom_main_2501"] .warning_main,div.w
+ .res-recommend-tag .button-wrap a .hot-rising-text{ width: 14px; height: 14px;vertical-align: -2px;}
+ .res-recommend-tag .button-wrap a:hover { background: #f1f3fe; color: #2366FF }
+ .res-recommend-tag .button-wrap .aibox { background: linear-gradient(to right, #EDF6FA, #F5F2FC); }
+-.res-recommend-tag.show-less .button-wrap{max-height: 66px;}
+-.res-recommend-tag.show-less .button-wrap,.res-recommend-tag.show-less .button-wrap {max-height: 74px;}
+-.abv-5292-cpc_lianhesy_4 .res-recommend-tag.show-less .button-wrap,.abv-5292-cpc_lianhesy_5 .res-recommend-tag.show-less .button-wrap {max-height: 74px;}
+ .abv-5292-cpc_lianhesy_4 #main .inline-recommend .item span a em,.abv-5292-cpc_lianhesy_5 #main .inline-recommend .item span a em {color: #2438cf;text-decoration: none;font-weight: 600;}
+ .abv-5292-cpc_lianhesy_4 #main .inline-recommend .item span,.abv-5292-cpc_lianhesy_5 #main .inline-recommend .item span {height: 32px;line-height: 32px;}
+ .hide-res-folding .res-recommend-tag{display: none;}
+diff --git a/resource/css/noresult-body.css b/resource/css/noresult-body.css
+index 7056f15ac..2496ee709 100644
+--- a/resource/css/noresult-body.css
++++ b/resource/css/noresult-body.css
+@@ -145,8 +145,6 @@ position:relative;
+ 
+ html,body{height: 100%;}
+ body{position: relative;}
+-body #footer{ z-index:5; text-indent:148px;padding-left:0;bottom: 0;left:0;width: 100%;}
+-#footer #haosougw{padding-left: 0px;}
+ /* 实时热点 */
+ .hot-search{ 
+ 	font-size: 13px;
+diff --git a/resource/css/result/folding.css b/resource/css/result/folding.css
+index 89e0af43d..19feb5e39 100644
+--- a/resource/css/result/folding.css
++++ b/resource/css/result/folding.css
+@@ -2,6 +2,5 @@
+ .folding.hide-res-folding .res-list{display:none;}
+ .folding.hide-res-folding .res-list-unfold{display:block;}
+ .folding.hide-res-folding .inline-recommend{display:none;}
+-/* .abv-5670-cpc_pos_1 .folding.hide-res-folding .mod-relation{display:none;} */
+ #tips-res-fold{font-size:14px;line-height: 21px; color:#333;position:relative;z-index:0;display: inline-block;}
+ #tips-res-fold p{margin-top: 5px;}
+\ No newline at end of file
+diff --git a/resource/css/result/others.css b/resource/css/result/others.css
+index d6ea84f64..bc6191404 100644
+--- a/resource/css/result/others.css
++++ b/resource/css/result/others.css
+@@ -16,6 +16,7 @@
+ #main .inline-recommend{padding: 0; position: relative;bottom: 12px;margin-bottom: 24px;border:none;line-height:23px; max-height: none!important; height: auto!important;}
+ #main .inline-recommend-inner{position: relative; max-height: none!important;width:100%;overflow: hidden;padding-bottom:0;}
+ #main .inline-recommend .item{ float: left; max-height: none!important; max-width: 100%;}
++.wide-version-result #main .inline-recommend .item-mixed {max-height: 110px !important;}
+ #main .inline-recommend .inline-recommend-title{ display: block; position: static!important; color: #333; font-size: 13px;line-height: 21px; height: 21px;}
+ #main .inline-recommend .inline-recommend-item{ display: block; text-indent: 0!important; overflow: hidden; max-height: 104px !important; padding-top: 8px;}
+ .abv-5292-cpc_lianhesy_4 #main .inline-recommend .inline-recommend-item,.abv-5292-cpc_lianhesy_5 #main .inline-recommend .inline-recommend-item {max-height: 120px!important;}
+@@ -85,56 +86,9 @@ background-image: url(http://s4.qhres2.com/static/0d420c0717bfb9f0.svg), none;}
+     border-radius: 0;
+ }
+ 
+-.abv-6105-cpc_rs5_2 #main .inline-recommend .item .inline-recommend-item-link::before,
+-.abv-6105-cpc_rs5_3 #main .inline-recommend .item-mixed a::before {
+-    content: '';
+-    background: url('https://so.360tres.com/dml/28_84_/t110b9a93014ef702551b13b1a0.webp');
+-    background-position: 0 -14px;
+-    background-repeat: no-repeat;
+-    background-size: 14px 42px;
+-    display: inline-block;
+-    width: 14px;
+-    height: 14px;
+-    position: relative;
+-    top: 2px;
+-    margin-right: 6px;
+-}
+-.abv-6105-cpc_rs5_2 #main .inline-recommend .item:hover .inline-recommend-item-link::before,
+-.abv-6105-cpc_rs5_3 #main .inline-recommend .item-mixed:hover a::before {
+-    background-position: 0 -28px;
+-}
+-
+ #main .inline-recommend .item.count-2 span{width: 266px;}
+ #main .inline-recommend .item.count-3 span{width: 174px;}
+ 
+-
+-.abv-2339-3 #main .inline-recommend{margin-bottom: -4px;}
+-.abv-2339-4 #main .inline-recommend{margin-bottom: -2px;}
+-.abv-2339-3 #main .inline-recommend .item span{margin-bottom:4px}
+-.abv-2339-3 #main .inline-recommend .inline-recommend-title,
+-.abv-2339-4 #main .inline-recommend .inline-recommend-title,
+-.abv-2339-3 .so_feedback, 
+-.abv-2339-3 .so_feedback a,
+-.abv-2339-3 .so_feedback:visited,
+-.abv-2339-4 .so_feedback, 
+-.abv-2339-4 .so_feedback a,
+-.abv-2339-4 .so_feedback:visited{font-size: 13px;line-height:21px;height:21px;}
+-.abv-2339-3 .so_feedback a .so_feedback_txt:hover,
+-.abv-2339-4 .so_feedback a .so_feedback_txt:hover{text-decoration: none;}
+-.abv-2339-3 #main .inline-recommend.less .item span{max-width:258px;overflow: hidden;text-overflow: ellipsis;}
+-.abv-2339-3 #main .inline-recommend.least .item span{max-width:164px;overflow: hidden;text-overflow: ellipsis;}
+-.abv-2339-4 #main .inline-recommend  .item a{text-decoration: none;font-size: 13px;display: inline-block;border-radius: 6px;height: 28px;line-height: 28px;background: #f5f5f5;padding: 0 10px;text-decoration: none;margin: 0 10px 3px 0;overflow: hidden;white-space: nowrap;text-overflow: ellipsis;max-width: 510px;}
+-.abv-2339-4 #main .inline-recommend .item a:hover {background: #f1f3fe; border-color: #b8b9fa;}
+-.abv-2339-4 #main .inline-recommend .inline-recommend-item{padding-top: 6px;max-height: 104px!important;margin-right: -10px;}
+-.abv-2339-4 .inline-recommend-item.so_feedback_edit a:after{background: url(https://p0.ssl.qhimg.com/t0191be2e4cb01327ec.png) no-repeat;background-image: -webkit-image-set(url(https://p0.ssl.qhimg.com/t0191be2e4cb01327ec.png) 1x,url(https://p3.ssl.qhimg.com/t015ee64f2634bd3262.png) 2x);background-position: -2px -2px;height: 18px;left: auto;right: 5px;top: 5px;width: 18px;z-index: 3;}
+-
+-/* 点推混排 */
+-.abv-5730-test #main .inline-recommend.inline-recommend-inc .item span a{width: auto !important;}
+-.abv-5730-test #main .inline-recommend.inline-recommend-inc .item span {display: inline !important;margin-right: 8px !important;}
+-.abv-5730-test #main .inline-recommend.inline-recommend-inc{margin-bottom: 8px;}
+-.abv-5730-test #main .inline-recommend.inline-recommend-inc .inline-recommend-item{max-height: 74px !important;}
+-.abv-5730-test #main .inline-recommend.inline-recommend-inc.show-more-lines .inline-recommend-item{max-height: 104px !important;}
+-
+ /*suggest*/
+ .ac_wrap{box-shadow:0px 1px 3px 0 rgba(0,0,0,0.08)}
+ .ac_wrap_inner {border: 2px solid #1cb054;border-top:0;border-radius: 0 0 10px 10px;overflow: hidden;}
+diff --git a/resource/js/result/inline-recommend.js b/resource/js/result/inline-recommend.js
+index 87555e9fa..ba73481cd 100644
+--- a/resource/js/result/inline-recommend.js
++++ b/resource/js/result/inline-recommend.js
+@@ -187,21 +187,13 @@
+                             self.version = ver;
+ 
+                             var queries = res.data.queries;
+-                            var isLianheSy = So.lib.checkAbv(5292, 'cpc_lianhesy_5') || So.lib.checkAbv(5292, 'cpc_lianhesy_4')
+-                            if (isLianheSy) {
+-                                var q = So.comm.q;
+-                                var pattern = new RegExp(q, 'ig');
+-                                for (var i = 0; i < queries.length; i++) {
+-                                    queries[i].title = queries[i].title.replace(pattern, '<em>' + q + '</em>');
+-                                }
+-                            }
+                             self.pssid = res.data.ssid || '';
+ 
+                             if (So.comm.src == 'SoftMgr_search') {
+                                 ver = 'soft';
+                             }
+ 
+-                            if (!So.lib.checkAbv(2339, '4') && queries.length > 9) {
++                            if (queries.length > 9) {
+                                 queries.length = 9;
+                             }
+ 
+@@ -210,14 +202,6 @@
+                                 inlineClass += ' referer-news-flow';
+                             }
+ 
+-                            if(typeof res.data === 'object' && res.data !== null && res.data.is_inc && So.lib.checkAbv(5730, 'test')) {
+-                                inlineClass += ' show-more-lines';
+-                            }
+-
+-                            if(So.lib.checkAbv(5730, 'test')){
+-                                inlineClass += ' inline-recommend-inc'
+-                            }
+-
+                             var tpl = ['<div class="inline-recommend '+ inlineClass +'" data-url="' + data.url + '" data-ssid="' + self.pssid + '"><div class="inline-recommend-inner"><div class="inline-recommend-title"><span class="recommend-icon"></span>为您推荐<span class="so_feedback"><a href="javascript:;" target="_blank" class="so_feedback_link" data-class="inline-recommend-item"> · <span class="so_feedback_txt">反馈</span></a></span></div> <div class="inline-recommend-item">'];
+ 
+                             function formatData(data) {
+@@ -241,29 +225,6 @@
+                                         break;
+                                     }
+                                 }
+-                                if (So.lib.checkAbv(5730, 'test')) {
+-                                    var maxLength = 0;
+-
+-                                    // 获取最大列长
+-                                    for (var i = 0; i < result.length; i++) {
+-                                        if (result[i] && result[i].length > maxLength) {
+-                                            maxLength = result[i].length;
+-                                        }
+-                                    }
+-
+-                                    var merged = [];
+-
+-                                    // 行优先遍历交错合并
+-                                    for (var j = 0; j < maxLength; j++) {
+-                                        for (var k = 0; k < result.length; k++) {
+-                                            if (result[k] && typeof result[k][j] !== 'undefined') {
+-                                                merged.push(result[k][j]);
+-                                            }
+-                                        }
+-                                    }
+-
+-                                    result = [merged];
+-                                }
+ 
+                                 return result;
+                             }
+@@ -289,7 +250,7 @@
+                             var item = getTableInfo(queries);
+                             var result = formatData(queries);
+                             var target = So.comm.fr == '360weishi' ? '_self' : '_blank';
+-                            var showMixed = So.lib.checkAbv(6105, 'cpc_rs5_3');
++                            var showMixed = false;
+ 
+                             if (showMixed) {
+                                 // 混排样式
+@@ -330,14 +291,8 @@
+                                     tpl.push('<div class="item' + addr + '">');
+                                     for (var j = 0; j < result[i].length; j++) {
+                                         var pos = j * item.col + i;
+-                                        if(So.lib.checkAbv(5730, 'test')) {
+-                                            var pos = j + i;
+-                                        }
+                                         var query = typeof result[i][j] === 'object' ? result[i][j].title : result[i][j];
+-                                        // 联合商业实验下不转义加粗<em>
+-                                        if (!isLianheSy) {
+-                                            query = So.lib.escapeHTML(query);
+-                                        }
++                                        query = So.lib.escapeHTML(query);
+                                         var reason = typeof result[i][j] === 'object' && result[i][j].rec_reason;
+                                         var reasonHTML = '';
+                                         if (reason === 'new') {
+@@ -418,57 +373,12 @@
+             }
+         },
+         sendLog: function (mod, params) {
+-            if (So.lib.checkAbv(2339, '3') || So.lib.checkAbv(2339, '4')) {
+-                var self = this;
+-                // p1内容太长，分两个打
+-                if (params.p1) {
+-                    So.lib.log(mod, { p1: params.p1, type: 'p1' + params.type });
+-                }
+-                So.lib.log(mod, $.extend({ psid: So.comm.sid, pssid: this.pssid }, params, {
+-                    p1: '',
+-                    title: self.getUrlParam('title', params.p1),
+-                    title_red: self.getUrlParam('title_red', params.p1),
+-                    ip: self.getUrlParam('ip', params.p1),
+-                    corr: self.getUrlParam('corr', params.p1),
+-                    huid: self.getUrlParam('huid', params.p1)
+-                }));
+-            } else {
+-                So.lib.log(mod, $.extend({ psid: So.comm.sid, pssid: this.pssid }, params));
+-            }
++            So.lib.log(mod, $.extend({ psid: So.comm.sid, pssid: this.pssid }, params));
+         },
+         showRecomm: function () {
+             var self = this;
+             var isZhuiwen = self.logMod === self.logMod_zhuiwen;
+ 
+-            if (So.lib.checkAbv(2339, '3')) {
+-                if (!self.$inlineRecommend.attr('data-rest')) {
+-                    $.each(self.$inlineRecommend.find('.item'), function (i, elm) {
+-                        self.$inlineRecommend.attr('data-rest', 1)
+-                        // 被隐藏的 >6 重排
+-                        if (!So.lib.isVisible($(elm), false, self.$inlineRecommend) && self.$inlineRecommend.find('.inline-recommend-item a').length > 6 && i == 2) {
+-                            self.$inlineRecommend.addClass('less');
+-
+-                            $.each(self.$inlineRecommend.find('.item'), function (i, item) {
+-                                $(item).find('span:eq(2)').remove();
+-                            });
+-
+-                            setTimeout(function () {
+-                                self.$inlineRecommend.find('.item:eq(0)').find('span:eq(1)').insertAfter(self.$inlineRecommend.find('.item:eq(1)').find('span:eq(0)'));
+-                            }, 0);
+-                            setTimeout(function () {
+-                                self.$inlineRecommend.find('.item:eq(1)').find('span:last').insertAfter(self.$inlineRecommend.find('.item:eq(0)').find('span:eq(0)'));
+-                            }, 0);
+-                            setTimeout(function () {
+-                                self.$inlineRecommend.find('.item:eq(2)').find('span:eq(0)').insertAfter(self.$inlineRecommend.find('.item:eq(0)').find('span:eq(0)'));
+-                            }, 0);
+-                            setTimeout(function () {
+-                                self.$inlineRecommend.find('.item:eq(2)').find('span:eq(0)').insertAfter(self.$inlineRecommend.find('.item:eq(1)').find('span:eq(1)'));
+-                            }, 0);
+-                        }
+-                    });
+-                }
+-            }
+-
+             // 追问版点推的曝光打点
+             if (isZhuiwen) {
+                 setTimeout(function() {
