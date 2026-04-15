@@ -7,10 +7,6 @@ export type I18nMessages = {
     htmlLang: string
     title: string
   }
-  common: {
-    localeLabel: string
-    localeOptions: Record<Locale, string>
-  }
   enums: {
     reviewSide: {
       additions: string
@@ -50,8 +46,8 @@ export type I18nMessages = {
     agentDraftCommentsHint: string
     linePositionLabel: ({ sideLabel, line }: { sideLabel: string, line: number }) => string
     decisionActions: {
-      accept: string
-      reject: string
+      accepted: string
+      rejected: string
       pending: string
     }
     diffTitle: string

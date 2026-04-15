@@ -5,13 +5,6 @@ export const enMessages: I18nMessages = {
     htmlLang: 'en',
     title: 'Review Deck',
   },
-  common: {
-    localeLabel: 'Language',
-    localeOptions: {
-      en: 'English',
-      'zh-CN': '简体中文',
-    },
-  },
   enums: {
     reviewSide: {
       additions: 'Addition',
@@ -54,8 +47,8 @@ export const enMessages: I18nMessages = {
       'Mark each suggestion as accepted, rejected, or keep pending.',
     linePositionLabel: ({ sideLabel, line }) => `${sideLabel} line ${line}`,
     decisionActions: {
-      accept: 'Accept',
-      reject: 'Reject',
+      accepted: 'Accept',
+      rejected: 'Reject',
       pending: 'Pending',
     },
     diffTitle: 'Diff Review',
