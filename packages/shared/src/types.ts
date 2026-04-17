@@ -149,3 +149,6 @@ export interface FileAlignmentInfo {
   isPureRename: boolean;
 }
 
+export interface ReviewResponse {
+  ok: boolean;
+}

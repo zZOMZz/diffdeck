@@ -11,10 +11,11 @@ import {
 } from "node:http";
 import { resolve, extname } from "node:path";
 import { readFile, readdir, stat } from "node:fs/promises";
-import {
-  type AgentDraftComment,
-  type ReviewSubmission,
-  type SubPatch,
+import type{
+  AgentDraftComment,
+  ReviewSubmission,
+  SubPatch,
+  ReviewResponse,
 } from "@reviewdeck/shared";
 import { CAC } from "cac";
 import { readStdin } from "../utils/read";
@@ -121,7 +122,7 @@ export async function startReviewServer(
 
         const submission: ReviewSubmission = JSON.parse(body);
         res.writeHead(200, { "content-type": "application/json" });
-        res.end(JSON.stringify({ ok: true }));
+        res.end(JSON.stringify({ ok: true } as ReviewResponse));
 
         setTimeout(() => {
           server.close(() => resolveComments(submission));

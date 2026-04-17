@@ -11,7 +11,7 @@ import type {
   AgentDraftCommentDecision,
   ReviewSide,
   ReviewSubmission,
-  SubPatch,
+  SubPatch
 } from '@reviewdeck/shared'
 
 import {
@@ -32,15 +32,13 @@ import {
 import { Textarea } from './components/ui/textarea'
 import {
   getCommentsForLine,
-  isSubmissionShape,
   buildRenderedDiff,
 } from './lib/review-utils'
-import { supportedLocales, type Locale } from './i18n/types'
 import { useI18n } from './i18n/useI18n'
 import type { ComposerState, LocalComment } from './types/review'
 
 function App() {
-  const { locale, setLocale, t } = useI18n()
+  const { t } = useI18n()
   const [patches, setPatches] = useState<SubPatch[]>([])
   const [selectedPatchId, setSelectedPatchId] = useState<number | null>(null)
   const [commentsByPatch, setCommentsByPatch] = useState<
@@ -221,11 +219,6 @@ function App() {
         throw new Error(`Failed to submit review (${response.status})`)
       }
 
-      const body = (await response.json()) as ReviewSubmission
-      if (!isSubmissionShape(body)) {
-        throw new Error('Server returned an unexpected response shape')
-      }
-
       setSubmitted(true)
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Failed to submit review')
@@ -285,27 +278,6 @@ function App() {
       <div className="mx-auto flex min-h-screen w-full max-w-[1680px] flex-col lg:flex-row">
         <aside className="border-b border-stone-300/80 bg-stone-950 text-stone-100 lg:min-h-screen lg:w-[340px] lg:border-b-0 lg:border-r">
           <div className="sticky top-0 flex flex-col gap-6 bg-stone-950/95 p-6 backdrop-blur">
-            <div className="space-y-2">
-              <label
-                className="block text-xs font-medium uppercase tracking-[0.24em] text-stone-500"
-                htmlFor="locale-select"
-              >
-                {t('common.localeLabel')}
-              </label>
-              <select
-                className="w-full rounded-xl border border-stone-700 bg-stone-900 px-3 py-2 text-sm text-stone-100 outline-none focus:border-amber-300"
-                id="locale-select"
-                onChange={(event) => setLocale(event.target.value as Locale)}
-                value={locale}
-              >
-                {supportedLocales.map((supportedLocale) => (
-                  <option key={supportedLocale} value={supportedLocale}>
-                    {t(`common.localeOptions.${supportedLocale}`)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
             <div className="space-y-2">
               <p className="text-xs uppercase tracking-[0.32em] text-amber-300/80">
                 {t('review.deckEyebrow')}
@@ -405,30 +377,30 @@ function App() {
               <CardHeader className="gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="accent">Patch #{selectedPatch.index}</Badge>
-                    <Badge>{selectedPatchFiles.length} file{selectedPatchFiles.length === 1 ? '' : 's'}</Badge>
-                    <Badge>{selectedComments.length} comment{selectedComments.length === 1 ? '' : 's'}</Badge>
+                    <Badge variant="accent">{t('review.patchBadge', { index: selectedPatch.index })}</Badge>
+                    <Badge>{t('review.fileCount', { count: selectedPatchFiles.length })}</Badge>
+                    <Badge>{t('review.commentCount', { count: selectedComments.length })}</Badge>
                   </div>
                   <div>
                     <CardTitle>{selectedPatch.description}</CardTitle>
                     <CardDescription className="mt-2 max-w-3xl text-base leading-7">
-                      Review the metadata here, then inspect the diff below. Comments attach to changed lines and will be submitted as human review comments.
+                      {t('review.metadataDescription')}
                     </CardDescription>
                   </div>
                 </div>
                 <div className="grid gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600 sm:grid-cols-2">
-                  <MetaItem label="Group Index" value={String(selectedPatch.index)} />
-                  <MetaItem label="Draft Comments" value={String(selectedPatch.draftComments.length)} />
+                  <MetaItem label={t('review.groupIndex')} value={String(selectedPatch.index)} />
+                  <MetaItem label={t('review.draftComments')} value={String(selectedPatch.draftComments.length)} />
                 </div>
               </CardHeader>
               {selectedPatch.draftComments.length > 0 ? (
                 <CardContent className="space-y-3">
                   <div className="flex items-center justify-between gap-3">
                     <h3 className="text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">
-                      Agent Draft Comments
+                      {t('review.agentDraftCommentsTitle')}
                     </h3>
                     <span className="text-sm text-stone-500">
-                      Mark each suggestion as accepted, rejected, or keep pending.
+                      {t('review.agentDraftCommentsHint')}
                     </span>
                   </div>
                   <div className="space-y-3">
@@ -443,10 +415,10 @@ function App() {
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge>{draftComment.file}</Badge>
                             <Badge variant="accent">
-                              {draftComment.side === 'additions' ? 'Addition' : 'Deletion'} line {draftComment.line}
+                              {t('review.linePositionLabel', { sideLabel: draftComment.side === 'additions' ? 'Addition' : 'Deletion', line: draftComment.line })}
                             </Badge>
                             <Badge variant={decision?.status === 'accepted' ? 'success' : decision?.status === 'rejected' ? 'destructive' : 'default'}>
-                              {decision?.status ?? 'pending'}
+                              {t(`review.decisionActions.${decision?.status ?? 'pending'}`)}
                             </Badge>
                           </div>
                           <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-stone-700">
@@ -455,17 +427,17 @@ function App() {
                           <div className="mt-4 flex flex-wrap gap-2">
                             <DecisionButton
                               active={decision?.status === 'accepted'}
-                              label="Accept"
+                              label={t('review.decisionActions.accepted')}
                               onClick={() => handleDraftDecisionChange(draftComment.id, 'accepted')}
                             />
                             <DecisionButton
                               active={decision?.status === 'rejected'}
-                              label="Reject"
+                              label={t('review.decisionActions.rejected')}
                               onClick={() => handleDraftDecisionChange(draftComment.id, 'rejected')}
                             />
                             <DecisionButton
                               active={decision?.status === 'pending'}
-                              label="Pending"
+                              label={t('review.decisionActions.pending')}
                               onClick={() => handleDraftDecisionChange(draftComment.id, 'pending')}
                             />
                           </div>
@@ -481,18 +453,18 @@ function App() {
               <CardHeader className="gap-3 border-b border-stone-200 bg-stone-50/80">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <CardTitle>Diff Review</CardTitle>
+                    <CardTitle>{t('review.diffTitle')}</CardTitle>
                     <CardDescription className="mt-1">
-                      Context lines stay neutral, deletions are red, additions are green. Use the comment action on change lines to add review notes.
+                      {t('review.diffDescription')}
                     </CardDescription>
                   </div>
-                  <Badge>{selectedPatch.diff.split('\n').length} lines</Badge>
+                  <Badge>{t('review.diffLineCount', { count: selectedPatch.diff.split('\n').length })}</Badge>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
                 {selectedPatchFiles.length === 0 ? (
                   <div className="px-6 py-10 text-sm text-stone-500">
-                    This patch did not parse into file diffs.
+                    {t('review.diffParseFallback')}
                   </div>
                 ) : (
                   <div className="divide-y divide-stone-200">
@@ -508,9 +480,9 @@ function App() {
                           ) : null}
 
                           {file.isDelete ? (
-                            <Badge variant="destructive">Deleted</Badge>
+                            <Badge variant="destructive">{t('review.fileState.deleted')}</Badge>
                           ) : file.isNew ? (
-                            <Badge variant="success">Added</Badge>
+                            <Badge variant="success">{t('review.fileState.added')}</Badge>
                           ) : null}
                         </div>
 
@@ -577,7 +549,7 @@ function App() {
                                               variant="ghost"
                                             >
                                               <MessageSquarePlus className="size-3.5" />
-                                              Comment
+                                              {t('review.addComment')}
                                             </Button>
                                           ) : null}
                                         </div>
@@ -592,7 +564,7 @@ function App() {
                                             >
                                               <div className="flex items-center justify-between gap-3">
                                                 <div className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-stone-500">
-                                                  <span>Human Comment</span>
+                                                  <span>{t('review.humanComment')}</span>
                                                   <span className="size-1 rounded-full bg-stone-300" />
                                                   <span>{comment.side}</span>
                                                 </div>
@@ -604,7 +576,7 @@ function App() {
                                                   type="button"
                                                   variant="ghost"
                                                 >
-                                                  Remove
+                                                  {t('review.remove')}
                                                 </Button>
                                               </div>
                                               <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-stone-700">
@@ -619,11 +591,11 @@ function App() {
                                         <div className="border-t border-amber-200 bg-amber-50 px-4 py-4">
                                           <div className="max-w-3xl space-y-3">
                                             <p className="text-sm font-medium text-amber-900">
-                                              Add comment for {composer?.file}:{composer?.line} ({composer?.side})
+                                              {t('review.composerTitle', { file: composer?.file, line: composer?.line, sideLabel: composer?.side })}
                                             </p>
                                             <Textarea
                                               onChange={(event) => setComposerText(event.target.value)}
-                                              placeholder="Explain the issue, risk, or follow-up for this line..."
+                                              placeholder={t('review.composerPlaceholder')}
                                               value={composerText}
                                             />
                                             <div className="flex flex-wrap gap-2">
@@ -633,7 +605,7 @@ function App() {
                                                 type="button"
                                               >
                                                 <Check className="size-4" />
-                                                Save comment
+                                                {t('review.saveComment')}
                                               </Button>
                                               <Button
                                                 onClick={() => {
@@ -643,7 +615,7 @@ function App() {
                                                 type="button"
                                                 variant="secondary"
                                               >
-                                                Cancel
+                                                {t('review.cancel')}
                                               </Button>
                                             </div>
                                           </div>
@@ -671,16 +643,16 @@ function App() {
           <CardContent className="flex flex-col gap-4 p-4">
             <div className="space-y-1">
               <p className="text-xs uppercase tracking-[0.28em] text-amber-300/80">
-                Review Summary
+                {t('review.floatingSummaryTitle')}
               </p>
               <p className="text-sm text-stone-300">
-                {totalCommentCount} human comments, {totalResolvedDrafts} draft decisions updated.
+                {t('review.floatingSummaryDescription', { commentCount: totalCommentCount, resolvedCount: totalResolvedDrafts })}
               </p>
               {submitError ? (
                 <p className="text-sm text-rose-300">{submitError}</p>
               ) : submitted ? (
                 <p className="text-sm text-emerald-300">
-                  Review submitted successfully.
+                  {t('review.submittedSuccess')}
                 </p>
               ) : null}
             </div>
@@ -694,12 +666,12 @@ function App() {
                 {submitting ? (
                   <>
                     <LoaderCircle className="size-4 animate-spin" />
-                    Submitting...
+                    {t('review.submitting')}
                   </>
                 ) : (
                   <>
                     <Send className="size-4" />
-                    Submit Review
+                    {t('review.submitReview')}
                   </>
                 )}
               </Button>
@@ -711,7 +683,7 @@ function App() {
                 type="button"
                 variant="secondary"
               >
-                Clear Status
+                {t('review.clearStatus')}
               </Button>
             </div>
           </CardContent>

@@ -1,6 +1,6 @@
 import type {
   ReviewSide,
-  ReviewSubmission,
+  ReviewResponse,
   SubPatch,
 } from "@reviewdeck/shared";
 import { parsePatch } from '@reviewdeck/core'
@@ -20,17 +20,6 @@ export function getCommentsForLine(
       comment.file === target.file &&
       comment.line === target.line &&
       comment.side === target.side,
-  )
-}
-
-export function isSubmissionShape(value: unknown): value is ReviewSubmission {
-  if (!value || typeof value !== 'object') {
-    return false
-  }
-
-  return (
-    Array.isArray((value as ReviewSubmission).comments) &&
-    Array.isArray((value as ReviewSubmission).draftComments)
   )
 }
 
