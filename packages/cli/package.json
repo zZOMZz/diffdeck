@@ -2,7 +2,6 @@
   "name": "@reviewdeck/cli",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/reviewdeck.mjs",
   "bin": {
     "reviewdeck": "dist/reviewdeck.mjs"
   },
@@ -18,8 +17,6 @@
     "cac": "^7.0.0"
   },
   "devDependencies": {
-    "@reviewdeck/cli-ui": "workspace:*",
-    "@reviewdeck/eslint-config": "workspace:*",
     "@reviewdeck/typescript-config": "workspace:*",
     "@types/node": "^24.12.0",
     "esbuild": "^0.28.0"

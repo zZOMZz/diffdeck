@@ -95,7 +95,7 @@ async function resolveDistDir(): Promise<string> {
  * Start the review server. Returns a promise that resolves with the final
  * review submission when the user submits the review.
  */
-export async function startReviewServer(
+async function startReviewServer(
   subPatches: SubPatch[],
   opts: { port?: number } = {}
 ): Promise<ReviewSubmission> {
@@ -199,7 +199,7 @@ async function serveStatic(
  *   1. Legacy format: first patch raw, then `\n===SUB_PATCH=== description\n`
  *   2. Headered format: every patch starts with `===SUB_PATCH=== <json-meta>\n`
  */
-export function parseSubPatchesFromStdin(
+function parseSubPatchesFromStdin(
   input: string,
   separator: string
 ): SubPatch[] {
@@ -304,7 +304,7 @@ function escapeRegex(s: string): string {
  * Parse sub-patches from files in a directory.
  * Reads meta.json (written by `split -o`) for descriptions when available.
  */
-export async function parseSubPatchesFromDir(dir: string): Promise<SubPatch[]> {
+async function parseSubPatchesFromDir(dir: string): Promise<SubPatch[]> {
   const files = (await readdir(dir))
     .filter((f) => f.endsWith(".diff"))
     .sort((a, b) => {

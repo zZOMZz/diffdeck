@@ -2,7 +2,7 @@ import { createContext } from 'react'
 
 import type { Locale, I18nKey } from './types'
 
-export type I18nContextValue = {
+type I18nContextValue = {
   locale: Locale
   setLocale: (locale: Locale) => void
   t: <K extends I18nKey>(key: K, args?: Record<string | number, string | number>) => string
