@@ -59,6 +59,7 @@ export type I18nMessages = {
       added: string
     }
     addComment: string
+    agentComment: string
     humanComment: string
     remove: string
     composerTitle: ({ file, line, sideLabel }: { file: string, line: number, sideLabel: string }) => string

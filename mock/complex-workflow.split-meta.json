@@ -7,6 +7,10 @@
         {
           "change": 7,
           "body": "The migration note now depends on the rename landing first, which is what this group guarantees."
+        },
+        {
+          "change": 0,
+          "body": "不能删除这个函数"
         }
       ]
     },

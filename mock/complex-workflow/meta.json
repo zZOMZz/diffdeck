@@ -12,6 +12,16 @@
         "side": "additions",
         "body": "The migration note now depends on the rename landing first, which is what this group guarantees.",
         "source": "agent"
+      },
+      {
+        "id": "g1-draft2",
+        "sub": 0,
+        "change": 0,
+        "file": "src/legacy/parser.ts",
+        "line": 2,
+        "side": "deletions",
+        "body": "不能删除这个函数",
+        "source": "agent"
       }
     ]
   },

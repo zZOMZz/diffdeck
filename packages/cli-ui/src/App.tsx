@@ -109,6 +109,7 @@ function App() {
   const selectedPatch =
     patches.find((patch) => patch.index === selectedPatchId) ?? null
   const selectedPatchFiles = selectedPatch ? buildRenderedDiff(selectedPatch) : []
+  console.log('[selectedPatchFiles]', selectedPatchFiles)
   const selectedComments = selectedPatch
     ? commentsByPatch[selectedPatch.index] ?? []
     : []
@@ -369,9 +370,6 @@ function App() {
         </aside>
 
         <main className="flex-1 px-4 py-4 pb-40 sm:px-6 lg:px-8">
-          {/* TODO: 从这里开始，把剩余硬编码英文文案逐步替换成 messages.review / messages.enums。 */}
-          {/* TODO: 优先替换 Badge、Button、标题、空态、提示文案，再处理复数和插值句子。 */}
-          {/* TODO: 不要直接渲染 draft status 和 review side 原始枚举值，改用 messages.enums 映射。 */}
           <div className="mx-auto flex max-w-[1200px] flex-col gap-5">
             <Card>
               <CardHeader className="gap-4 md:flex-row md:items-start md:justify-between">
@@ -412,34 +410,19 @@ function App() {
                           key={draftComment.id}
                           className="rounded-2xl border border-stone-200 bg-stone-50 p-4"
                         >
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge>{draftComment.file}</Badge>
-                            <Badge variant="accent">
-                              {t('review.linePositionLabel', { sideLabel: draftComment.side === 'additions' ? 'Addition' : 'Deletion', line: draftComment.line })}
-                            </Badge>
-                            <Badge variant={decision?.status === 'accepted' ? 'success' : decision?.status === 'rejected' ? 'destructive' : 'default'}>
-                              {t(`review.decisionActions.${decision?.status ?? 'pending'}`)}
-                            </Badge>
-                          </div>
-                          <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-stone-700">
-                            {draftComment.body}
-                          </p>
-                          <div className="mt-4 flex flex-wrap gap-2">
-                            <DecisionButton
-                              active={decision?.status === 'accepted'}
-                              label={t('review.decisionActions.accepted')}
-                              onClick={() => handleDraftDecisionChange(draftComment.id, 'accepted')}
-                            />
-                            <DecisionButton
-                              active={decision?.status === 'rejected'}
-                              label={t('review.decisionActions.rejected')}
-                              onClick={() => handleDraftDecisionChange(draftComment.id, 'rejected')}
-                            />
-                            <DecisionButton
-                              active={decision?.status === 'pending'}
-                              label={t('review.decisionActions.pending')}
-                              onClick={() => handleDraftDecisionChange(draftComment.id, 'pending')}
-                            />
+                          <div className='flex flex-col'>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge>{draftComment.file}</Badge>
+                              <Badge variant="accent">
+                                {t('review.linePositionLabel', { sideLabel: draftComment.side === 'additions' ? 'Addition' : 'Deletion', line: draftComment.line })}
+                              </Badge>
+                              <Badge variant={decision?.status === 'accepted' ? 'success' : decision?.status === 'rejected' ? 'destructive' : 'default'}>
+                                {t(`review.decisionActions.${decision?.status ?? 'pending'}`)}
+                              </Badge>
+                            </div>
+                            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-stone-700">
+                              {draftComment.body}
+                            </p>
                           </div>
                         </div>
                       )
@@ -495,6 +478,7 @@ function App() {
                               <div className="min-w-[780px] font-mono text-sm">
                                 {hunk.lines.map((line) => {
                                   const commentTarget = line.commentTarget
+                                  const draftComment = line.draftComment
                                   const lineComments = getCommentsForLine(
                                     selectedComments,
                                     commentTarget,
@@ -554,6 +538,29 @@ function App() {
                                           ) : null}
                                         </div>
                                       </div>
+
+                                      {/* draft comments */}
+                                      {
+                                        draftComment ? (
+                                          <div className="space-y-2 border-t border-stone-100 bg-stone-50 px-4 py-3 shadow-sm">
+                                            <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
+                                              <div className='flex items-center justify-between gap-3'>
+                                                <div className='flex items-center gap-2 text-xs uppercase tracking-[0.22rem] text-stone-500'>
+                                                  <span>{t('review.agentComment')}</span>
+                                                  <span className="size-1 rounded-full bg-stone-300" />
+                                                  <span>{draftComment.side}</span>
+                                                </div>
+                                                <div className='flex items-center gap-2'>
+                                                  <DecisionButton active={draftDecisions[draftComment.id]?.status === 'accepted'} label={t('review.decisionActions.accepted')} onClick={() => handleDraftDecisionChange(draftComment.id, 'accepted')} />
+                                                  <DecisionButton active={draftDecisions[draftComment.id]?.status === 'rejected'} label={t('review.decisionActions.rejected')} onClick={() => handleDraftDecisionChange(draftComment.id, 'rejected')} />
+                                                  <DecisionButton active={draftDecisions[draftComment.id]?.status === 'pending'} label={t('review.decisionActions.pending')} onClick={() => handleDraftDecisionChange(draftComment.id, 'pending')} />
+                                                </div>
+                                              </div>
+                                              <p className="text-sm leading-6 mt-2 text-stone-700">{draftComment.body}</p>
+                                            </div>
+                                          </div>
+                                        ) : null
+                                      }
 
                                       {lineComments.length > 0 ? (
                                         <div className="space-y-2 border-t border-stone-100 bg-stone-50 px-4 py-3">

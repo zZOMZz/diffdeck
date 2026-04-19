@@ -61,6 +61,7 @@ export const enMessages: I18nMessages = {
       added: 'Added',
     },
     addComment: 'Comment',
+    agentComment: 'Agent Comment',
     humanComment: 'Human Comment',
     remove: 'Remove',
     composerTitle: ({ file, line, sideLabel }) =>

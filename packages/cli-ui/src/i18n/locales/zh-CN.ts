@@ -42,9 +42,9 @@ export const zhCNMessages: I18nMessages = {
       '在此查看 metadata，然后向下浏览 diff。Comment 会附加到变更行，并作为 human review comment 提交。',
     groupIndex: 'Group 索引',
     draftComments: 'Draft Comment',
-    agentDraftCommentsTitle: 'Agent Draft Comment',
+    agentDraftCommentsTitle: 'Agent Draft Comments',
     agentDraftCommentsHint:
-      '将每条建议标记为 accepted、rejected，或保持 pending。',
+      '每条Agent Comment的状态可以是已接受、已拒绝、或待定',
     linePositionLabel: ({ sideLabel, line }) => `${sideLabel} line ${line}`,
     decisionActions: {
       accepted: '接受',
@@ -61,6 +61,7 @@ export const zhCNMessages: I18nMessages = {
       added: '新增文件',
     },
     addComment: 'Comment',
+    agentComment: 'Agent Comment',
     humanComment: 'Human Comment',
     remove: '移除',
     composerTitle: ({ file, line, sideLabel }) =>

@@ -1,4 +1,4 @@
-import type { ReviewComment, ReviewSide } from '@reviewdeck/shared'
+import type { AgentDraftComment, ReviewComment, ReviewSide } from '@reviewdeck/shared'
 
 export type ParsedDiffFile = {
   key: string
@@ -25,6 +25,7 @@ export type ParsedDiffLine = {
     line: number
     side: ReviewSide
   }
+  draftComment?: AgentDraftComment
 }
 
 export type LocalComment = ReviewComment & { id: string }
