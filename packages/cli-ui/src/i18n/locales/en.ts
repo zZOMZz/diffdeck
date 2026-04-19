@@ -38,13 +38,11 @@ export const enMessages: I18nMessages = {
     commentCount: ({ count }) => `${count} comments`,
     patchBadge: ({ index }) => `Patch #${index}`,
     fileCount: ({ count }) => `${count} file${count === 1 ? '' : 's'}`,
-    metadataDescription:
-      'Review the metadata here, then inspect the diff below. Comments attach to changed lines and will be submitted as human review comments.',
     groupIndex: 'Group Index',
     draftComments: 'Draft Comments',
     agentDraftCommentsTitle: 'Agent Draft Comments',
     agentDraftCommentsHint:
-      'Mark each suggestion as accepted, rejected, or keep pending.',
+      'Mark each Agent comment as accepted, rejected, or pending.',
     linePositionLabel: ({ sideLabel, line }) => `${sideLabel} line ${line}`,
     decisionActions: {
       accepted: 'Accept',

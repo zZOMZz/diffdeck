@@ -484,9 +484,6 @@ function App() {
                   </div>
                   <div>
                     <CardTitle>{selectedPatch.description}</CardTitle>
-                    <CardDescription className="mt-2 max-w-3xl text-base leading-7">
-                      {t('review.metadataDescription')}
-                    </CardDescription>
                   </div>
                 </div>
                 <div className="grid gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600 sm:grid-cols-2">

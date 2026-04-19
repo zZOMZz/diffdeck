@@ -25,7 +25,7 @@ export const zhCNMessages: I18nMessages = {
     deckEyebrow: 'Review Deck',
     pageTitle: 'Patch Review',
     pageDescription:
-      '审查 patch metadata、查看 diff、添加行级 comment，然后向 CLI server 提交一个 payload。',
+      'Review拆分后的各个 patch：浏览 diff，在变更行添加 comment，并统一提交。',
     summary: {
       patches: 'Patch',
       comments: 'Comment',
@@ -34,17 +34,15 @@ export const zhCNMessages: I18nMessages = {
     },
     patchQueueTitle: 'Patch Queue',
     patchGroupLabel: ({ index }) => `Group ${index}`,
-    draftHints: ({ count }) => `${count} 条 draft hint`,
+    draftHints: ({ count }) => `${count} 条 draft comment`,
     commentCount: ({ count }) => `${count} 条 comment`,
     patchBadge: ({ index }) => `Patch #${index}`,
     fileCount: ({ count }) => `${count} 个 file`,
-    metadataDescription:
-      '在此查看 metadata，然后向下浏览 diff。Comment 会附加到变更行，并作为 human review comment 提交。',
     groupIndex: 'Group 索引',
     draftComments: 'Draft Comment',
-    agentDraftCommentsTitle: 'Agent Draft Comments',
+    agentDraftCommentsTitle: 'Draft Comments',
     agentDraftCommentsHint:
-      '每条Agent Comment的状态可以是已接受、已拒绝、或待定',
+      '每条 Draft Comment 均可标记为：接受、拒绝或待定。',
     linePositionLabel: ({ sideLabel, line }) => `${sideLabel} line ${line}`,
     decisionActions: {
       accepted: '接受',
@@ -53,7 +51,7 @@ export const zhCNMessages: I18nMessages = {
     },
     diffTitle: 'Diff Review',
     diffDescription:
-      '上下文行保持中性，删除为红色，新增为绿色。在变更行上使用 comment 操作添加 review 备注。',
+      '上下文行保持中性，删除行为红色，新增行为绿色。可以在变更行上点击 comment 按钮添加备注。',
     diffLineCount: ({ count }) => `${count} 行`,
     diffParseFallback: '该 patch 未能解析为 file diff。',
     fileState: {
@@ -61,17 +59,17 @@ export const zhCNMessages: I18nMessages = {
       added: '新增文件',
     },
     addComment: 'Comment',
-    agentComment: 'Agent Comment',
+    agentComment: 'Draft Comment',
     humanComment: 'Human Comment',
     remove: '移除',
     composerTitle: ({ file, line, sideLabel }) =>
       `为 ${file}:${line}（${sideLabel}）添加 comment`,
     composerPlaceholder: '说明本行的问题、风险或后续跟进…',
-    saveComment: '保存 comment',
+    saveComment: '保存',
     cancel: '取消',
     floatingSummaryTitle: 'Review Comments',
     floatingSummaryDescription: ({ commentCount, resolvedCount }) =>
-      `可提交 ${commentCount} 条 Human Comment，${resolvedCount} 条 Agent Comment。`,
+      `可提交 ${commentCount} 条 Human Comment，${resolvedCount} 条 Draft Comment。`,
     previewPayload: '预览',
     previewPayloadTitle: '提交内容预览',
     previewPayloadDescription:

@@ -39,7 +39,6 @@ export type I18nMessages = {
     commentCount: ({ count }: { count: number }) => string
     patchBadge: ({ index }: { index: number }) => string
     fileCount: ({ count }: { count: number }) => string
-    metadataDescription: string
     groupIndex: string
     draftComments: string
     agentDraftCommentsTitle: string
