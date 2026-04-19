@@ -284,7 +284,7 @@ function App() {
   return (
     <div className="min-h-screen bg-transparent text-stone-900">
       <div className="mx-auto flex min-h-screen w-full max-w-[1680px] flex-col lg:flex-row lg:items-start">
-        <aside className="flex flex-col justify-between border-b border-stone-300/80 bg-stone-950 text-stone-100 lg:sticky lg:top-0 lg:h-screen lg:max-h-screen lg:w-[340px] lg:shrink-0 lg:self-start lg:overflow-y-auto lg:border-b-0 lg:border-r">
+        <aside className="review-aside-scrollbar flex flex-col justify-between border-b border-stone-300/80 bg-stone-950 text-stone-100 lg:sticky lg:top-0 lg:h-screen lg:max-h-screen lg:w-[340px] lg:shrink-0 lg:self-start lg:overflow-y-auto lg:border-b-0 lg:border-r">
           <div className="top-0 flex flex-col gap-6 bg-stone-950/95 p-6 backdrop-blur">
             <div className="space-y-2">
               <p className="text-xs uppercase tracking-[0.32em] text-amber-300/80">

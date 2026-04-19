@@ -24,6 +24,8 @@
 
 html {
   scroll-behavior: smooth;
+  scrollbar-color: rgba(120, 113, 108, 0.72) rgba(245, 245, 244, 0.58);
+  scrollbar-width: thin;
 }
 
 body {
@@ -41,4 +43,46 @@ textarea {
 
 #root {
   min-height: 100vh;
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(245, 245, 244, 0.72);
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid rgba(245, 245, 244, 0.72);
+  border-radius: 999px;
+  background: rgba(120, 113, 108, 0.62);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(87, 83, 78, 0.82);
+}
+
+.review-aside-scrollbar {
+  scrollbar-color: rgba(251, 191, 36, 0.58) rgba(28, 25, 23, 0.72);
+  scrollbar-width: thin;
+}
+
+.review-aside-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.review-aside-scrollbar::-webkit-scrollbar-track {
+  background: rgba(28, 25, 23, 0.72);
+}
+
+.review-aside-scrollbar::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(28, 25, 23, 0.72);
+  border-radius: 999px;
+  background: rgba(251, 191, 36, 0.46);
+}
+
+.review-aside-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(251, 191, 36, 0.72);
 }
