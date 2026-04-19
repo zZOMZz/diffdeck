@@ -1,5 +1,5 @@
 {
-  "name": "@reviewdeck/core",
+  "name": "@diffdeck/core",
   "version": "1.0.0",
   "description": "",
   "main": "./src/index.ts",
@@ -14,10 +14,10 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "@reviewdeck/shared": "workspace:*"
+    "@diffdeck/shared": "workspace:*"
   },
   "devDependencies": {
-    "@reviewdeck/typescript-config": "workspace:*"
+    "@diffdeck/typescript-config": "workspace:*"
   },
   "keywords": [],
   "author": "",

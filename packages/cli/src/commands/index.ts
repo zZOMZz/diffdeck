@@ -1,5 +1,5 @@
 import type { CAC } from "cac";
-import { parsePatch, formatIndexedChanges, indexChanges } from "@reviewdeck/core";
+import { parsePatch, formatIndexedChanges, indexChanges } from "@diffdeck/core";
 import { readFile } from "node:fs/promises";
 import { writeFileSync } from "node:fs";
 

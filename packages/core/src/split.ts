@@ -16,7 +16,7 @@ import type {
   FileAlignmentInfo,
   HunkAlignment,
   AlignmentEntry,
-} from "@reviewdeck/shared";
+} from "@diffdeck/shared";
 import { parsePatch } from "./patch.ts";
 
 

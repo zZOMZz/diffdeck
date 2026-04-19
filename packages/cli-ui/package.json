@@ -1,5 +1,5 @@
 {
-  "name": "@reviewdeck/cli-ui",
+  "name": "@diffdeck/cli-ui",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -18,8 +18,8 @@
     "react-dom": "^19.2.4",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.2",
-    "@reviewdeck/shared": "workspace:*",
-    "@reviewdeck/core": "workspace:*"
+    "@diffdeck/shared": "workspace:*",
+    "@diffdeck/core": "workspace:*"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

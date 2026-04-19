@@ -1,5 +1,5 @@
 {
-  "extends": "@reviewdeck/typescript-config/bundler",
+  "extends": "@diffdeck/typescript-config/bundler",
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./dist",

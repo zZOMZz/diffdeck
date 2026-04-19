@@ -2,7 +2,7 @@
  * Pure diff algorithms — no I/O.
  */
 
-import type { DiffLine } from "@reviewdeck/shared";
+import type { DiffLine } from "@diffdeck/shared";
 
 export function myersDiff(a: string[], b: string[]): DiffLine[] {
   // LCS via dynamic programming (good enough for error messages)

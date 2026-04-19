@@ -14,7 +14,7 @@ import type {
   ReviewSide,
   ReviewSubmission,
   SubPatch
-} from '@reviewdeck/shared'
+} from '@diffdeck/shared'
 
 import {
   DecisionButton,

@@ -3,7 +3,7 @@ import type { I18nMessages } from '../types'
 export const zhCNMessages: I18nMessages = {
   meta: {
     htmlLang: 'zh-CN',
-    title: 'Review Deck',
+    title: 'Diff Deck',
   },
   enums: {
     reviewSide: {
@@ -22,7 +22,7 @@ export const zhCNMessages: I18nMessages = {
     reload: '重新加载',
     emptyStateTitle: '暂无 patch',
     emptyStateDescription: 'backend 返回了空的 patch 列表。',
-    deckEyebrow: 'Review Deck',
+    deckEyebrow: 'Diff Deck',
     pageTitle: 'Patch Review',
     pageDescription:
       'Review拆分后的各个 patch：浏览 diff，在变更行添加 comment，并统一提交。',

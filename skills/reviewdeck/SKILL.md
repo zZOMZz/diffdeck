@@ -1,15 +1,15 @@
 ---
-name: reviewdeck
+name: diffdeck
 description: Split a large PR/MR diff into reiviewable sub-patches for eaiser code review 
 ---
 
-# Reviewdeck
+# DiffDeck
 你帮助代码审查员将大型 PR 差异转换为有序的审查演示文稿，然后将其交给人工审查。
 
 默认设置：
 - 除非用户明确要求你亲自review代码， 否则不要使用你的自动reivew code流程
 - 如果用户想要 PR 审查帮助， 不要在 `split` 之后停止。 除非用户明确只需要拆分后的数据， 否则继续执行`render` 命令
-- 通过 `npx` 调用CLI时， 使用 `npx reviewdeck@latest ...`
+- 通过 `npx` 调用CLI时， 使用 `npx diffdeck@latest ...`
 
 # 主路径
 
@@ -45,7 +45,7 @@ git diff --cached > pr.diff
 ### 2. 为改动建立索引
 
 ```bash
-npx reviewdeck index pr.diff
+npx diffdeck index pr.diff
 ```
 
 这个命令用来打印一个带编号的改动行列表。 这些索引就是输入给LLM在拆分元素中分组的单位
@@ -86,12 +86,12 @@ npx reviewdeck index pr.diff
 ### 5. 拆分并验证
 
 ```bash
-echo '<meta JSON>' | npx reviewdeck split pr.diff -
+echo '<meta JSON>' | npx diffdeck split pr.diff -
 ```
 
 或者将结果写入指定文件及下：
 ```bash
-echo '<meta JSON>' | npx reviewdeck split pr.diff - -o output/
+echo '<meta JSON>' | npx diffdeck split pr.diff - -o output/
 ```
 
 这个命令在执行时， 会验证元数据的有效性、生成子补丁， 并验证它们能否重新组合回原始diff。
@@ -108,7 +108,7 @@ npx reiviewdeck render output/
 
 或者从stdin输入
 ```bash
-echo '<meta JSON>' | npx reviewdeck split pr.diff - | npx reviewdeck render -
+echo '<meta JSON>' | npx diffdeck split pr.diff - | npx diffdeck render -
 ```
 
 运行render命令后， 会在本地打开一个`httpServer`，并打开浏览器， 阻塞直到人工review完成，并向stdout打印一个reivew完成后提交的JSON对象

@@ -1,23 +1,23 @@
 {
-  "name": "@reviewdeck/cli",
+  "name": "@diffdeck/cli",
   "version": "1.0.0",
   "description": "",
   "bin": {
-    "reviewdeck": "dist/reviewdeck.mjs"
+    "diffdeck": "dist/diffdeck.mjs"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build:cli": "esbuild src/index.ts --bundle --outfile=dist/reviewdeck.mjs --format=esm --platform=node --banner:js='#!/usr/bin/env node'",
+    "build:cli": "esbuild src/index.ts --bundle --outfile=dist/diffdeck.mjs --format=esm --platform=node --banner:js='#!/usr/bin/env node'",
     "sync:ui": "node scripts/sync-ui.js",
     "build": "pnpm build:cli && pnpm sync:ui"
   },
   "dependencies": {
-    "@reviewdeck/core": "workspace:*",
-    "@reviewdeck/shared": "workspace:*",
+    "@diffdeck/core": "workspace:*",
+    "@diffdeck/shared": "workspace:*",
     "cac": "^7.0.0"
   },
   "devDependencies": {
-    "@reviewdeck/typescript-config": "workspace:*",
+    "@diffdeck/typescript-config": "workspace:*",
     "@types/node": "^24.12.0",
     "esbuild": "^0.28.0"
   },

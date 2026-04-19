@@ -3,7 +3,7 @@ import { registerIndexCommands } from './commands/index.ts';
 import { registerRenderCommands } from './commands/render.ts';
 import { registerSplitCommands } from './commands/split.ts';
 
-const cli = cac('reviewdeck');
+const cli = cac('diffdeck');
 
 // 注册command
 registerIndexCommands(cli);

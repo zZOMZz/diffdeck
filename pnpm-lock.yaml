@@ -26,17 +26,17 @@ importers:
 
   packages/cli:
     dependencies:
-      '@reviewdeck/core':
+      '@diffdeck/core':
         specifier: workspace:*
         version: link:../core
-      '@reviewdeck/shared':
+      '@diffdeck/shared':
         specifier: workspace:*
         version: link:../shared
       cac:
         specifier: ^7.0.0
         version: 7.0.0
     devDependencies:
-      '@reviewdeck/typescript-config':
+      '@diffdeck/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/node':
@@ -48,10 +48,10 @@ importers:
 
   packages/cli-ui:
     dependencies:
-      '@reviewdeck/core':
+      '@diffdeck/core':
         specifier: workspace:*
         version: link:../core
-      '@reviewdeck/shared':
+      '@diffdeck/shared':
         specifier: workspace:*
         version: link:../shared
       '@tailwindcss/vite':
@@ -118,11 +118,11 @@ importers:
 
   packages/core:
     dependencies:
-      '@reviewdeck/shared':
+      '@diffdeck/shared':
         specifier: workspace:*
         version: link:../shared
     devDependencies:
-      '@reviewdeck/typescript-config':
+      '@diffdeck/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
 
@@ -164,7 +164,7 @@ importers:
 
   packages/shared:
     devDependencies:
-      '@reviewdeck/typescript-config':
+      '@diffdeck/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/node':

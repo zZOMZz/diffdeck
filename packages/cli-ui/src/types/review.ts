@@ -1,4 +1,4 @@
-import type { AgentDraftComment, ReviewComment, ReviewSide } from '@reviewdeck/shared'
+import type { AgentDraftComment, ReviewComment, ReviewSide } from '@diffdeck/shared'
 
 export type ParsedDiffFile = {
   key: string

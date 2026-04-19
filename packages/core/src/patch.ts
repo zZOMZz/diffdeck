@@ -8,7 +8,7 @@ import {
   type FilePatch,
   type FileContents,
   PatchError,
-} from "@reviewdeck/shared";
+} from "@diffdeck/shared";
 
 // ---------------------------------------------------------------------------
 // Parsing

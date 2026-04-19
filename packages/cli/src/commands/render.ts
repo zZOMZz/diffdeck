@@ -16,7 +16,7 @@ import type{
   ReviewSubmission,
   SubPatch,
   ReviewResponse,
-} from "@reviewdeck/shared";
+} from "@diffdeck/shared";
 import { CAC } from "cac";
 import { readStdin } from "../utils/read";
 

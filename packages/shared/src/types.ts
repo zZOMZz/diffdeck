@@ -1,5 +1,5 @@
 /**
- * Shared types for the reviewdeck core.
+ * Shared types for the diffdeck core.
  */
 
 // ---------------------------------------------------------------------------
@@ -64,7 +64,7 @@ export type ChangeItem = number | string;
 export type ReviewSide = "additions" | "deletions";
 
 export interface DraftReviewCommentInput {
-  /** Anchor this draft comment to an indexed change from `reviewdeck index`. */
+  /** Anchor this draft comment to an indexed change from `diffdeck index`. */
   change: number;
   body: string;
 }

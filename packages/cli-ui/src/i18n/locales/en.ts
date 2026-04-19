@@ -3,7 +3,7 @@ import type { I18nMessages } from '../types'
 export const enMessages: I18nMessages = {
   meta: {
     htmlLang: 'en',
-    title: 'Review Deck',
+    title: 'Diff Deck',
   },
   enums: {
     reviewSide: {
@@ -22,7 +22,7 @@ export const enMessages: I18nMessages = {
     reload: 'Reload',
     emptyStateTitle: 'No patches available',
     emptyStateDescription: 'The backend returned an empty patch list.',
-    deckEyebrow: 'Review Deck',
+    deckEyebrow: 'Diff Deck',
     pageTitle: 'Patch Review',
     pageDescription:
       'Review patch metadata, inspect diffs, add line comments, then submit one payload to the CLI server.',

@@ -2,8 +2,8 @@ import type {
   ReviewSide,
   SubPatch,
   AgentDraftComment,
-} from "@reviewdeck/shared";
-import { parsePatch } from '@reviewdeck/core'
+} from "@diffdeck/shared";
+import { parsePatch } from '@diffdeck/core'
 
 import type { LocalComment, ParsedDiffFile, ParsedDiffLine } from '../types/review'
 

@@ -1,8 +1,7 @@
 import { CAC } from "cac";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
-import { parsePatch, indexChanges, validateMeta, generateSubPatches, reconstructBase, applyPatch, resolveSplitGroupMeta } from "@reviewdeck/core";
-import type { SplitMeta } from "@reviewdeck/shared";
-import { type ResolvedSplitGroupMeta } from "@reviewdeck/shared";
+import { parsePatch, indexChanges, validateMeta, generateSubPatches, reconstructBase, applyPatch, resolveSplitGroupMeta } from "@diffdeck/core";
+import type { SplitMeta, ResolvedSplitGroupMeta } from "@diffdeck/shared";
 import { readFileOrStdin } from "../utils/read";
 
 interface SplitOptions {
@@ -135,8 +134,8 @@ This is likely a bug in the splitting algorithm. Please report it.`);
   await writeSubs(subs, groupMeta, options.output);
 
   if (options.output) {
-    console.error(`Next: run "reviewdeck render ${options.output}" to review these sub-patches.`);
+    console.error(`Next: run "diffdeck render ${options.output}" to review these sub-patches.`);
   } else {
-    console.error('Next: pipe this output into "reviewdeck render -" to launch review.');
+    console.error('Next: pipe this output into "diffdeck render -" to launch review.');
   }
 }

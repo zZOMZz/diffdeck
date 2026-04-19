@@ -1,5 +1,5 @@
 {
-  "extends": "@reviewdeck/typescript-config/node-library",
+  "extends": "@diffdeck/typescript-config/node-library",
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./dist",
