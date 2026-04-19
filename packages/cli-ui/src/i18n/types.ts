@@ -68,6 +68,9 @@ export type I18nMessages = {
     cancel: string
     floatingSummaryTitle: string
     floatingSummaryDescription: ({ commentCount, resolvedCount }: { commentCount: number, resolvedCount: number }) => string
+    previewPayload: string
+    previewPayloadTitle: string
+    previewPayloadDescription: string
     submittedSuccess: string
     submitting: string
     submitReview: string

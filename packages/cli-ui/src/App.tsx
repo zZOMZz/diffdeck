@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import {
   Check,
   ChevronRight,
+  Eye,
   LoaderCircle,
   MessageSquarePlus,
   Send,
+  X,
 } from 'lucide-react'
 
 import type {
@@ -54,6 +56,7 @@ function App() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   // 获取patches数据
   useEffect(() => {
@@ -120,6 +123,11 @@ function App() {
   const totalResolvedDrafts = Object.values(draftDecisions).filter(
     (draft) => draft.status !== 'pending',
   ).length
+
+  const reviewPayload: ReviewSubmission = {
+    comments: Object.values(commentsByPatch).flat(),
+    draftComments: Object.values(draftDecisions),
+  }
 
   const totalHunkLines = selectedPatchFiles.reduce((count, file) => count + file.hunks.reduce((c, h) => c + h.lines.length, 0), 0)
 
@@ -199,11 +207,6 @@ function App() {
 
   // 提交review结果
   const submitReview = async () => {
-    const payload: ReviewSubmission = {
-      comments: Object.values(commentsByPatch).flat(),
-      draftComments: Object.values(draftDecisions),
-    }
-
     setSubmitting(true)
     setSubmitError(null)
     setSubmitted(false)
@@ -214,7 +217,7 @@ function App() {
         headers: {
           'content-type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(reviewPayload),
       })
 
       if (!response.ok) {
@@ -398,6 +401,15 @@ function App() {
 
                 <div className="flex flex-col gap-2">
                   <Button
+                    className="h-10 w-full border-stone-700 bg-stone-950/70 text-stone-300 hover:bg-stone-800 hover:text-stone-50"
+                    onClick={() => setPreviewOpen(true)}
+                    type="button"
+                    variant="secondary"
+                  >
+                    <Eye className="size-4" />
+                    {t('review.previewPayload')}
+                  </Button>
+                  <Button
                     className="h-11 w-full bg-amber-300 font-semibold text-stone-950 shadow-[0_12px_30px_-18px_rgba(251,191,36,0.9)] hover:bg-amber-200"
                     disabled={submitting}
                     onClick={submitReview}
@@ -420,6 +432,45 @@ function App() {
             </Card>
           </div>
         </aside>
+
+        {previewOpen ? (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/70 px-4 py-6 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="payload-preview-title"
+          >
+            <Card className="flex max-h-[86vh] w-full max-w-4xl flex-col overflow-hidden border-stone-800 bg-stone-950 text-stone-50 shadow-2xl">
+              <CardHeader className="flex-row items-start justify-between gap-4 border-stone-800 bg-stone-900/90">
+                <div>
+                  <CardTitle
+                    className="text-stone-50"
+                    id="payload-preview-title"
+                  >
+                    {t('review.previewPayloadTitle')}
+                  </CardTitle>
+                  <CardDescription className="mt-1 text-stone-400">
+                    {t('review.previewPayloadDescription')}
+                  </CardDescription>
+                </div>
+                <Button
+                  className="shrink-0 text-stone-300 hover:bg-stone-800 hover:text-stone-50"
+                  onClick={() => setPreviewOpen(false)}
+                  size="icon"
+                  type="button"
+                  variant="ghost"
+                >
+                  <X className="size-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="min-h-0 overflow-auto p-0">
+                <pre className="min-h-full overflow-auto p-5 font-mono text-xs leading-6 text-stone-200">
+                  {JSON.stringify(reviewPayload, null, 2)}
+                </pre>
+              </CardContent>
+            </Card>
+          </div>
+        ) : null}
 
         <main className="flex-1 px-4 py-4 pb-40 sm:px-6 lg:flex-1 lg:px-8 lg:pb-8">
           <div className="mx-auto flex max-w-[1200px] flex-col gap-5">
@@ -591,14 +642,15 @@ function App() {
                                         </div>
                                       </div>
 
-                                      {/* draft comments */}
                                       {
                                         draftComment ? (
                                           <div className="space-y-2 border-t border-stone-100 bg-stone-50 px-4 py-3 shadow-sm">
                                             <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
                                               <div className='flex items-center justify-between gap-3'>
                                                 <div className='flex items-center gap-2 text-xs uppercase tracking-[0.22rem] text-stone-500'>
-                                                  <span>{t('review.agentComment')}</span>
+                                                  <span className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50/90 px-2 py-0.5 text-[11px] font-semibold tracking-[0.14em] text-indigo-500">
+                                                    {t('review.agentComment')}
+                                                  </span>
                                                   <span className="size-1 rounded-full bg-stone-300" />
                                                   <span>{draftComment.side}</span>
                                                 </div>
@@ -623,7 +675,9 @@ function App() {
                                             >
                                               <div className="flex items-center justify-between gap-3">
                                                 <div className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-stone-500">
-                                                  <span>{t('review.humanComment')}</span>
+                                                  <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold tracking-[0.14em] text-emerald-700">
+                                                    {t('review.humanComment')}
+                                                  </span>
                                                   <span className="size-1 rounded-full bg-stone-300" />
                                                   <span>{comment.side}</span>
                                                 </div>

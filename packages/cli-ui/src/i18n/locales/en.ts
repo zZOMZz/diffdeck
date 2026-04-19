@@ -72,6 +72,10 @@ export const enMessages: I18nMessages = {
     floatingSummaryTitle: 'Review Summary',
     floatingSummaryDescription: ({ commentCount, resolvedCount }) =>
       `${commentCount} human comments, ${resolvedCount} draft decisions updated.`,
+    previewPayload: 'Preview JSON',
+    previewPayloadTitle: 'Submission Preview',
+    previewPayloadDescription:
+      'This is the JSON payload that will be sent if you submit now.',
     submittedSuccess: 'Review submitted successfully.',
     submitting: 'Submitting...',
     submitReview: 'Submit Review',

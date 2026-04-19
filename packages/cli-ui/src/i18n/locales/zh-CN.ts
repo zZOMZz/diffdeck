@@ -72,6 +72,10 @@ export const zhCNMessages: I18nMessages = {
     floatingSummaryTitle: 'Review Comments',
     floatingSummaryDescription: ({ commentCount, resolvedCount }) =>
       `可提交 ${commentCount} 条 Human Comment，${resolvedCount} 条 Agent Comment。`,
+    previewPayload: '预览',
+    previewPayloadTitle: '提交内容预览',
+    previewPayloadDescription:
+      '这是当前点击提交时会发送出去的 JSON payload。',
     submittedSuccess: '已成功提交。',
     submitting: '提交中…',
     submitReview: '提交',
