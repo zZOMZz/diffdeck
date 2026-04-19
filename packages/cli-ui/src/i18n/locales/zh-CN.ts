@@ -18,7 +18,7 @@ export const zhCNMessages: I18nMessages = {
   },
   review: {
     loading: '正在加载 patch…',
-    loadErrorTitle: '无法加载 patch',
+    loadErrorTitle: '获取 Patch 数据失败',
     reload: '重新加载',
     emptyStateTitle: '暂无 patch',
     emptyStateDescription: 'backend 返回了空的 patch 列表。',

@@ -20,6 +20,8 @@ import {
   DecisionButton,
   LineNumberCell,
   MetaItem,
+  SubmitError,
+  SubmitSuccess,
   SummaryTile,
 } from './components/review/review-primitives'
 import { Badge } from './components/ui/badge'
@@ -38,6 +40,7 @@ import {
 } from './lib/review-utils'
 import { useI18n } from './i18n/useI18n'
 import type { ComposerState, LocalComment } from './types/review'
+import { getErrorMessage } from './lib/utils'
 
 function App() {
   const { t } = useI18n()
@@ -226,7 +229,7 @@ function App() {
 
       setSubmitted(true)
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'Failed to submit review')
+      setSubmitError(getErrorMessage(error, 'Failed to submit review'))
     } finally {
       setSubmitting(false)
     }
@@ -389,14 +392,9 @@ function App() {
                 </div>
 
                 {submitError ? (
-                  <div className="rounded-xl border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm leading-6 text-rose-200">
-                    {submitError}
-                  </div>
+                  <SubmitError error={submitError} onClose={() => setSubmitError(null)} />
                 ) : submitted ? (
-                  <div className="flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
-                    <Check className="size-4 shrink-0" />
-                    {t('review.submittedSuccess')}
-                  </div>
+                  <SubmitSuccess success={t('review.submittedSuccess')} onClose={() => setSubmitted(false)} />
                 ) : null}
 
                 <div className="flex flex-col gap-2">
@@ -639,29 +637,27 @@ function App() {
                                         </div>
                                       </div>
 
-                                      {
-                                        draftComment ? (
-                                          <div className="space-y-2 border-t border-stone-100 bg-stone-50 px-4 py-3 shadow-sm">
-                                            <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-                                              <div className='flex items-center justify-between gap-3'>
-                                                <div className='flex items-center gap-2 text-xs uppercase tracking-[0.22rem] text-stone-500'>
-                                                  <span className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50/90 px-2 py-0.5 text-[11px] font-semibold tracking-[0.14em] text-indigo-500">
-                                                    {t('review.agentComment')}
-                                                  </span>
-                                                  <span className="size-1 rounded-full bg-stone-300" />
-                                                  <span>{draftComment.side}</span>
-                                                </div>
-                                                <div className='flex items-center gap-2'>
-                                                  <DecisionButton active={draftDecisions[draftComment.id]?.status === 'accepted'} label={t('review.decisionActions.accepted')} onClick={() => handleDraftDecisionChange(draftComment.id, 'accepted')} />
-                                                  <DecisionButton active={draftDecisions[draftComment.id]?.status === 'rejected'} label={t('review.decisionActions.rejected')} onClick={() => handleDraftDecisionChange(draftComment.id, 'rejected')} />
-                                                  <DecisionButton active={draftDecisions[draftComment.id]?.status === 'pending'} label={t('review.decisionActions.pending')} onClick={() => handleDraftDecisionChange(draftComment.id, 'pending')} />
-                                                </div>
+                                      {draftComment ? (
+                                        <div className="space-y-2 border-t border-stone-100 bg-stone-50 px-4 py-3 shadow-sm">
+                                          <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
+                                            <div className='flex items-center justify-between gap-3'>
+                                              <div className='flex items-center gap-2 text-xs uppercase tracking-[0.22rem] text-stone-500'>
+                                                <span className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50/90 px-2 py-0.5 text-[11px] font-semibold tracking-[0.14em] text-indigo-500">
+                                                  {t('review.agentComment')}
+                                                </span>
+                                                <span className="size-1 rounded-full bg-stone-300" />
+                                                <span>{draftComment.side}</span>
                                               </div>
-                                              <p className="text-sm leading-6 mt-2 text-stone-700">{draftComment.body}</p>
+                                              <div className='flex items-center gap-2'>
+                                                <DecisionButton active={draftDecisions[draftComment.id]?.status === 'accepted'} label={t('review.decisionActions.accepted')} onClick={() => handleDraftDecisionChange(draftComment.id, 'accepted')} />
+                                                <DecisionButton active={draftDecisions[draftComment.id]?.status === 'rejected'} label={t('review.decisionActions.rejected')} onClick={() => handleDraftDecisionChange(draftComment.id, 'rejected')} />
+                                                <DecisionButton active={draftDecisions[draftComment.id]?.status === 'pending'} label={t('review.decisionActions.pending')} onClick={() => handleDraftDecisionChange(draftComment.id, 'pending')} />
+                                              </div>
                                             </div>
+                                            <p className="text-sm leading-6 mt-2 text-stone-700">{draftComment.body}</p>
                                           </div>
-                                        ) : null
-                                      }
+                                        </div>
+                                      ) : null}
 
                                       {lineComments.length > 0 ? (
                                         <div className="space-y-2 border-t border-stone-100 bg-stone-50 px-4 py-3">
