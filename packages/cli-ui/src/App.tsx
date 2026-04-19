@@ -109,7 +109,6 @@ function App() {
   const selectedPatch =
     patches.find((patch) => patch.index === selectedPatchId) ?? null
   const selectedPatchFiles = selectedPatch ? buildRenderedDiff(selectedPatch) : []
-  console.log('[selectedPatchFiles]', selectedPatchFiles)
   const selectedComments = selectedPatch
     ? commentsByPatch[selectedPatch.index] ?? []
     : []
@@ -121,6 +120,8 @@ function App() {
   const totalResolvedDrafts = Object.values(draftDecisions).filter(
     (draft) => draft.status !== 'pending',
   ).length
+
+  const totalHunkLines = selectedPatchFiles.reduce((count, file) => count + file.hunks.reduce((c, h) => c + h.lines.length, 0), 0)
 
   const handleDraftDecisionChange = (
     draftId: string,
@@ -441,7 +442,7 @@ function App() {
                       {t('review.diffDescription')}
                     </CardDescription>
                   </div>
-                  <Badge>{t('review.diffLineCount', { count: selectedPatch.diff.split('\n').length })}</Badge>
+                  <Badge>{t('review.diffLineCount', { count: totalHunkLines })}</Badge>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
