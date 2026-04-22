@@ -1,6 +1,6 @@
 {
   "name": "@diffdeck/cli",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "",
   "bin": {
     "diffdeck": "dist/diffdeck.mjs"
