@@ -78,7 +78,7 @@ npx diffdeck index pr.diff
 - 选择所设置的审查模式匹配的顺序。 在`deps-first`模式下， 尽可能将前置依赖改动放在他们的改动之前
 - 每个分组中的`description` 应该帮助reiviewer理解这组代码的主要功能，review顺序等， 而不是仅仅复述文件名或标签
 - 相同情况下， 优先使用紧凑的范围与法，例如当这个group的changes包含从第0行**连续**到第10行时，不要输出`[0,1,2,...,10]`， 而是直接输出`[0-10]`, 以便节省LLM的output token
-- `draftComment`是可选字段。 只有当你认为这个group中的某一行或某一段代码中， 有值得reviewer关注的问题时（一般是一些安全隐患）， 你才需要添加一条`draftComment`
+- `draftComment`是可选字段。 只有当你认为这个group中的某一行或某一段代码中， 有值得reviewer关注的问题时（安全隐患或性能严重问题）， 你才需要添加一条`draftComment`
 - 每条`draftComment`必须锚定到同一分组内的一个`change`， 不能出现空位置或不存在这个组的change下的`draftComment`。
 
 如果需要更深入的分组规则、`description`撰写或高质量`draftComment`指导， 请阅读[references/split.md](references/split.md)
@@ -98,7 +98,7 @@ echo '<meta JSON>' | npx diffdeck split pr.diff - -o output/
 
 如果`split`命令执行失败， 请详细阅读错误信息， 根据错误信息中提供的内容， 修正元数据JSON， 然后重试
 
-### 6. 交给人工review
+### 6. 开启本地的人工review浏览器窗口
 
 `split`命令成功后， 默认下一步是人工进行实时reiview审查：
 
